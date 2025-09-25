@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ellite Corpus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              primary: {
+                "50": "rgb(var(--color-primary-50) / <alpha-value>)",
+                "100": "rgb(var(--color-primary-100) / <alpha-value>)",
+                "200": "rgb(var(--color-primary-200) / <alpha-value>)",
+                "300": "rgb(var(--color-primary-300) / <alpha-value>)",
+                "400": "rgb(var(--color-primary-400) / <alpha-value>)",
+                "500": "rgb(var(--color-primary-500) / <alpha-value>)",
+                "600": "rgb(var(--color-primary-600) / <alpha-value>)",
+                "700": "rgb(var(--color-primary-700) / <alpha-value>)",
+                "800": "rgb(var(--color-primary-800) / <alpha-value>)",
+                "900": "rgb(var(--color-primary-900) / <alpha-value>)",
+                "950": "rgb(var(--color-primary-950) / <alpha-value>)",
+              },
+              slate: {"50":"#f8fafc","100":"#f1f5f9","200":"#e2e8f0","300":"#cbd5e1","400":"#94a3b8","500":"#64748b","600":"#475569","700":"#334155","800":"#1e293b","900":"#0f172a","950":"#020617"}
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fadeIn {
+        animation: fadeIn 0.5s ease-out forwards;
+      }
+      @keyframes stagger {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-stagger {
+        animation: stagger 0.4s ease-out backwards;
+      }
+      @keyframes shimmer {
+        100% {
+          transform: translateX(100%);
+        }
+      }
+      .ai-content p { margin-bottom: 0.5rem; }
+      .ai-content p:last-child { margin-bottom: 0; }
+      .ai-content ul, .ai-content ol { 
+        padding-left: 1.5rem; 
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+      .ai-content ul { list-style-type: disc; }
+      .ai-content ol { list-style-type: decimal; }
+      .ai-content li { margin-bottom: 0.25rem; }
+      .ai-content li::marker { 
+        color: #64748b; /* slate-500 */
+      }
+      html.dark .ai-content li::marker {
+        color: #94a3b8; /* slate-400 */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-gray-100 dark:bg-slate-900 font-sans">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
