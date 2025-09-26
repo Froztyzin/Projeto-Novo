@@ -66,7 +66,7 @@ const InfoItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, 
 
 export const Settings: React.FC = () => {
     const { 
-        importData, roles, currentUser, addRole, updateRole, deleteRole, hasPermission, isLoading, manuallyTriggerBilling,
+        importData, roles, currentUser, addRole, updateRole, deleteRole, hasPermission, isLoading,
         logo: contextLogo, primaryColor: contextPrimaryColor, updateLogo, updatePrimaryColor
     } = useAppContext();
     const { addToast } = useToast();
@@ -319,24 +319,6 @@ export const Settings: React.FC = () => {
                     <Button onClick={handleResetChanges} variant="outline" disabled={!isDirty}>Cancelar</Button>
                     <Button onClick={handleSaveSettings} disabled={!isDirty}>Salvar Alterações</Button>
                 </div>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Automação de Faturamento</CardTitle>
-                        <CardDescription>Execute tarefas de faturamento para gerar cobranças recorrentes e atualizar status.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <Button onClick={manuallyTriggerBilling} variant="primary" className="w-full justify-center sm:w-auto">
-                                <SparklesIcon className="w-5 h-5 mr-2" />
-                                Executar Ciclo de Faturamento
-                            </Button>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                            Esta ação irá verificar todos os alunos ativos, gerar novas cobranças pendentes e atualizar pagamentos para "Vencido".
-                        </p>
-                    </CardContent>
-                </Card>
                 
                 <Card>
                     <CardHeader>

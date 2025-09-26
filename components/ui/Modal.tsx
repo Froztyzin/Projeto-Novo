@@ -37,12 +37,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex justify-center items-center transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+      className={`fixed inset-0 z-40 flex justify-center items-start pt-12 md:pt-20 overflow-y-auto transition-opacity duration-300 ease-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}
       onClick={onClose}
     >
       <div className="fixed inset-0 bg-black bg-opacity-60"></div>
       <div
-        className={`bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-lg mx-4 transform transition-all duration-300 ease-out ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+        className={`bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-lg mx-4 mb-8 transform transition-all duration-300 ease-out ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700">

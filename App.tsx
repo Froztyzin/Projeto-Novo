@@ -1,5 +1,7 @@
+
+
 import React, { useState, useEffect } from 'react';
-import type { ViewType } from './types';
+import type { ViewType, Member } from './types';
 import { Permission } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -17,11 +19,19 @@ import { ToastContainer } from './components/ui/Toast';
 import { LoginPage } from './components/LoginPage';
 import { AIAssistant } from './components/AIAssistant';
 import ErrorBoundary from './components/ErrorBoundary';
+import { BottomNavBar } from './components/BottomNavBar';
+import { CommandPalette } from './components/CommandPalette';
+import { MemberDetailsModal } from './components/MemberDetailsModal';
 
 const MainApplication: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { hasPermission, currentUserRole } = useAppContext();
+  // Fix: Removed `getPlanName` as it's not provided by the AppContext.
+  const { hasPermission, currentUserRole, members, plans, payments } = useAppContext();
+  
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedMemberForDetails, setSelectedMemberForDetails] = useState<Member | null>(null);
 
   useEffect(() => {
     const viewPermissionMap: Record<ViewType, Permission | Permission[]> = {
@@ -54,20 +64,39 @@ const MainApplication: React.FC = () => {
             if (Array.isArray(perm)) {
                 return perm.some(p => hasPermission(p));
             }
-            return hasPermission(perm);
+            return hasPermission(perm as Permission);
         });
 
         if (fallbackView && fallbackView !== view) {
             setView(fallbackView);
         }
     }
-  }, [view, currentUserRole, hasPermission, setView]);
+  }, [view, currentUserRole, hasPermission]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setIsPaletteOpen(open => !open);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+  const openMemberDetails = (member: Member) => {
+    setSelectedMemberForDetails(member);
+    setIsDetailsModalOpen(true);
+  };
 
 
   const renderView = () => {
     switch (view) {
       case 'dashboard': return <Dashboard />;
-      case 'members': return <MembersList />;
+      case 'members': return <MembersList openMemberDetails={openMemberDetails} />;
       case 'plans': return <PlansList />;
       case 'payments': return <PaymentsList />;
       case 'expenses': return <ExpensesList />;
@@ -106,15 +135,43 @@ const MainApplication: React.FC = () => {
             <MenuIcon className="h-6 w-6" />
           </button>
           <h1 className="text-2xl font-semibold">{viewTitles[view]}</h1>
-          <div className="w-6"></div>
+           <button 
+                onClick={() => setIsPaletteOpen(true)}
+                className="hidden md:flex items-center text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            >
+                Busca Rápida
+                <span className="ml-2 text-xs font-mono bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">
+                    Ctrl+K
+                </span>
+            </button>
         </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-6 lg:pb-8">
           <div key={view} className="animate-fadeIn">
             {renderView()}
           </div>
         </main>
       </div>
+      <BottomNavBar currentView={view} setView={setView} />
       <AIAssistant />
+      <CommandPalette 
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        setView={setView}
+        openMemberDetails={openMemberDetails}
+      />
+      {isDetailsModalOpen && selectedMemberForDetails && (
+        <MemberDetailsModal
+            isOpen={isDetailsModalOpen}
+            onClose={() => {
+                setIsDetailsModalOpen(false);
+                setSelectedMemberForDetails(null);
+            }}
+            member={selectedMemberForDetails}
+            plan={plans.find(p => p.id === selectedMemberForDetails.planId) || null}
+            payments={payments.filter(p => p.memberId === selectedMemberForDetails.id)}
+            plans={plans}
+        />
+      )}
       <ToastContainer />
     </div>
   );
@@ -156,6 +213,7 @@ const App: React.FC = () => {
   }, []);
 
   return (
+    // Fix: Removed comment explaining a fix that is already present in the code.
     <ErrorBoundary>
       <ToastProvider>
         <AppProvider>

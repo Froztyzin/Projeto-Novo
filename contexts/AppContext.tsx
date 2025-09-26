@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Member, Plan, Payment, Expense, Role, User } from '../types';
 import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission } from '../types';
@@ -39,11 +40,22 @@ const generateInitialPayments = (members: Member[], plans: Plan[]): Payment[] =>
             let status = PaymentStatus.Paid;
             if (member.status === MemberStatus.Pending) {
                 status = PaymentStatus.Overdue;
-                payments.push({ id: `pay${payments.length + 1}`, memberId: member.id, planId: member.planId, description: `Pagamento pendente para ${plan.name}`, amount: plan.price, date: dueDate, status });
+                payments.push({ id: `pay${payments.length + 1}`, memberId: member.id, planId: member.planId, description: `Pagamento pendente para ${plan.name}`, amount: plan.price, date: dueDate, status, paidDate: undefined });
                 break; 
             }
             if (member.status === MemberStatus.Inactive && dueDate > new Date('2023-03-01')) break;
-            payments.push({ id: `pay${payments.length + 1}`, memberId: member.id, planId: member.planId, description: `Pagamento para ${plan.name}`, amount: plan.price, date: dueDate, status });
+            
+            const isPaid = status === PaymentStatus.Paid;
+            payments.push({ 
+                id: `pay${payments.length + 1}`, 
+                memberId: member.id, 
+                planId: member.planId, 
+                description: `Pagamento para ${plan.name}`, 
+                amount: plan.price, 
+                date: dueDate, 
+                status,
+                paidDate: isPaid ? new Date(dueDate.getTime() - Math.random() * 3 * 24 * 60 * 60 * 1000) : undefined
+            });
             paymentCycleStartDate.setMonth(paymentCycleStartDate.getMonth() + plan.durationInMonths);
         }
     });
@@ -60,7 +72,7 @@ const initialExpenses: Expense[] = [
 const initialRoles: Role[] = [
     { id: 'role_admin', name: 'Administrador', description: 'Acesso total a todas as funcionalidades do sistema.', permissions: Object.values(Permission), isEditable: false },
     { id: 'role_manager', name: 'Gerente', description: 'Gerencia alunos, planos, pagamentos e finanças.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.DELETE_MEMBERS, Permission.VIEW_PLANS, Permission.CREATE_PLANS, Permission.UPDATE_PLANS, Permission.DELETE_PLANS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.DELETE_PAYMENTS, Permission.VIEW_EXPENSES, Permission.CREATE_EXPENSES, Permission.UPDATE_EXPENSES, Permission.DELETE_EXPENSES, Permission.VIEW_REPORTS, Permission.VIEW_CALENDAR, Permission.MANAGE_SETTINGS ], isEditable: true },
-    { id: 'role_staff', name: 'Recepcionista', description: 'Acesso para gerenciar alunos e registrar pagamentos.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.VIEW_CALENDAR ], isEditable: true }
+    { id: 'role_staff', name: 'Recepcionista', description: 'Acesso para gerenciar alunos e registrar pagamentos.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.VIEW_CALENDAR ], isEditable: true }
 ];
 
 const dummyUsers: User[] = [
@@ -473,7 +485,7 @@ ${JSON.stringify(dataContext, null, 2)}
 
   const addPayment = (payment: Omit<Payment, 'id'>) => {
     const newPayment = { ...payment, id: `pay${Date.now()}` };
-    setPayments(prev => [newPayment, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
+    setPayments(prev => [newPayment, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     const member = members.find(m => m.id === payment.memberId);
     if(member && member.status === MemberStatus.Pending && payment.status === PaymentStatus.Paid) {
         updateMember({...member, status: MemberStatus.Active});
@@ -482,7 +494,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   const updatePayment = (updatedPayment: Payment) => {
-    setPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p).sort((a,b) => b.date.getTime() - a.date.getTime()));
+    setPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     addToast('Pagamento atualizado com sucesso!', 'success');
   };
 
@@ -540,7 +552,7 @@ ${JSON.stringify(dataContext, null, 2)}
 
         if (data.members) setMembers(parseDates(data.members, ['joinDate']));
         if (data.plans) setPlans(data.plans);
-        if (data.payments) setPayments(parseDates(data.payments, ['date']));
+        if (data.payments) setPayments(parseDates(data.payments, ['date', 'paidDate']));
         if (data.expenses) setExpenses(parseDates(data.expenses, ['date']));
         addToast('Dados importados com sucesso!', 'success');
 

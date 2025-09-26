@@ -149,7 +149,7 @@ export const CalendarView: React.FC = () => {
               return (
                   <div 
                       key={index} 
-                      className={`border border-gray-200 dark:border-gray-700 rounded-lg p-2 flex flex-col min-h-[120px] transition-all duration-300 ease-in-out ${dayInfo.isCurrentMonth ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/40'} ${dayPayments.length > 0 ? 'cursor-pointer hover:bg-primary-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700' : ''}`}
+                      className={`border border-gray-200 dark:border-gray-700 rounded-lg p-2 flex flex-col min-h-[100px] sm:min-h-[120px] transition-all duration-300 ease-in-out ${dayInfo.isCurrentMonth ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/40'} ${dayPayments.length > 0 ? 'cursor-pointer hover:bg-primary-50 dark:hover:bg-gray-700/50 hover:border-primary-300 dark:hover:border-primary-700' : ''}`}
                       onClick={() => handleDayClick(dayInfo.date)}
                   >
                       <span className={`font-bold text-sm self-start ${isToday ? 'bg-primary-500 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''} ${dayInfo.isCurrentMonth ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>

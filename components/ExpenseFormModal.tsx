@@ -1,4 +1,4 @@
-// Fix: Corrected malformed React import statement.
+
 import React, { useState, useEffect } from 'react';
 import type { Expense } from '../types';
 import { ExpenseCategory, ExpenseStatus } from '../types';

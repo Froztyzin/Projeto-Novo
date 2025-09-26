@@ -217,28 +217,40 @@ export const Reports: React.FC = () => {
         <div className="bg-gray-50 dark:bg-gray-900/40 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Receita Mensal (Filtrada)</h3>
             <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
-                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
-                    <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={shortCurrencyFormatter} />
-                    <Tooltip cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }} content={<CustomTooltip formatter={currencyFormatter} />} />
-                    <Bar dataKey="Receita" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                {monthlyRevenueData.length > 0 ? (
+                    <BarChart data={monthlyRevenueData} margin={{ top: 5, right: 20, left: 30, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
+                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                        <YAxis stroke="#9ca3af" fontSize={12} tickFormatter={shortCurrencyFormatter} />
+                        <Tooltip cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }} content={<CustomTooltip formatter={currencyFormatter} />} />
+                        <Bar dataKey="Receita" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+                        Sem dados para exibir
+                    </div>
+                )}
             </ResponsiveContainer>
         </div>
         
         <div className="bg-gray-50 dark:bg-gray-900/40 p-6 rounded-lg">
             <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Distribuição de Receita por Plano</h3>
             <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                    <Pie data={planDistributionData} cx="50%" cy="50%" labelLine={false} outerRadius={110} fill="#8884d8" dataKey="value" nameKey="name" label={({ percent }) => (percent * 100) > 3 ? `${(percent * 100).toFixed(0)}%` : ''} >
-                        {planDistributionData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip formatter={currencyFormatter} />} />
-                    <Legend />
-                </PieChart>
+                {planDistributionData.length > 0 ? (
+                    <PieChart>
+                        <Pie data={planDistributionData} cx="50%" cy="50%" labelLine={false} outerRadius={110} fill="#8884d8" dataKey="value" nameKey="name" label={({ percent }) => (percent * 100) > 3 ? `${(percent * 100).toFixed(0)}%` : ''} >
+                            {planDistributionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip formatter={currencyFormatter} />} />
+                        <Legend />
+                    </PieChart>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+                        Sem dados para exibir
+                    </div>
+                )}
             </ResponsiveContainer>
         </div>
       </div>

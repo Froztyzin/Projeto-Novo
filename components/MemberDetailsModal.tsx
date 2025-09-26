@@ -10,6 +10,7 @@ interface MemberDetailsModalProps {
   member: Member;
   plan: Plan | null;
   payments: Payment[];
+  plans: Plan[];
 }
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -19,12 +20,14 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
   </div>
 );
 
-export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, onClose, member, plan, payments }) => {
+export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, onClose, member, plan, payments, plans }) => {
   if (!isOpen) return null;
 
   const sortedPayments = useMemo(() => 
     payments.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   , [payments]);
+  
+  const getPlanName = (planId: string) => plans.find(p => p.id === planId)?.name || 'Pagamento Avulso';
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Aluno">
@@ -35,7 +38,7 @@ export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, 
           <DetailItem label="Telefone" value={member.telefone || 'N/A'} />
           <DetailItem label="Data de Inscrição" value={new Date(member.joinDate).toLocaleDateString('pt-BR')} />
           <DetailItem label="Status" value={<MemberStatusBadge status={member.status} />} />
-          <DetailItem label="Plano" value={plan?.name || 'N/A'} />
+          <DetailItem label="Plano Atual" value={plan?.name || 'N/A'} />
           {plan && <DetailItem label="Valor do Plano" value={plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })} />}
         </div>
 
@@ -47,14 +50,24 @@ export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, 
             <div className="max-h-60 overflow-y-auto pr-2">
                 <ul className="space-y-3">
                 {sortedPayments.map(payment => (
-                    <li key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div>
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(payment.date).toLocaleDateString('pt-BR')}
-                        </p>
-                    </div>
-                    <PaymentStatusBadge status={payment.status} />
+                    <li key={payment.id} className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div>
+                          <p className="font-semibold text-gray-800 dark:text-gray-100">{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {getPlanName(payment.planId)}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Vencimento: {new Date(payment.date).toLocaleDateString('pt-BR')}
+                          </p>
+                          {payment.paidDate && (
+                            <p className="text-sm text-green-600 dark:text-green-400">
+                                Pago em: {new Date(payment.paidDate).toLocaleDateString('pt-BR')}
+                            </p>
+                          )}
+                      </div>
+                      <div className="flex-shrink-0 ml-4">
+                        <PaymentStatusBadge status={payment.status} />
+                      </div>
                     </li>
                 ))}
                 </ul>

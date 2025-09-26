@@ -2,7 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from './ui/Button';
 import { AlertTriangleIcon } from './ui/Icons';
 
-interface Props {
+interface ErrorBoundaryProps {
   children: ReactNode;
 }
 
@@ -10,24 +10,24 @@ interface State {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false
-  };
+class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
+  // Fix: Initialized state using a class property. This resolves type errors where
+  // `this.state` and `this.props` were not recognized on the component instance.
+  state: State = { hasError: false };
 
-  public static getDerivedStateFromError(_: Error): State {
+  static getDerivedStateFromError(_: Error): State {
     return { hasError: true };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
-  private handleReload = () => {
+  handleReload = () => {
     window.location.reload();
-  };
+  }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-slate-900 text-center p-4">

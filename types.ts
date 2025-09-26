@@ -71,7 +71,8 @@ export interface Payment {
   planId: string;
   description?: string;
   amount: number;
-  date: Date;
+  date: Date; // Due Date
+  paidDate?: Date; // Actual payment date
   status: PaymentStatus;
 }
 

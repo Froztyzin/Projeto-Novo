@@ -6,9 +6,12 @@ import { MemberStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
 import { PlusCircleIcon, UsersIcon, EditIcon, TrashIcon } from './ui/Icons';
 import { MemberFormModal } from './MemberFormModal';
-import { MemberDetailsModal } from './MemberDetailsModal';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { Skeleton } from './ui/Skeleton';
+
+interface MembersListProps {
+  openMemberDetails: (member: Member) => void;
+}
 
 const MembersListSkeleton: React.FC = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
@@ -60,26 +63,23 @@ const Avatar: React.FC<{ name: string }> = ({ name }) => {
     );
 };
 
-export const MembersList: React.FC = () => {
+export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) => {
   const { members, plans, payments, addMember, updateMember, deleteMember, hasPermission, isLoading } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<MemberStatus | 'all'>('all');
   const [planFilter, setPlanFilter] = useState<string>('all');
-  
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-  
+    
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
 
-  const stats = useMemo(() => ({
-    total: members.length,
-    active: members.filter(m => m.status === MemberStatus.Active).length,
-    pending: members.filter(m => m.status === MemberStatus.Pending).length,
-    inactive: members.filter(m => m.status === MemberStatus.Inactive).length,
-  }), [members]);
+  const stats = useMemo(() => ([
+    { title: "Total de Alunos", value: members.length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Alunos Ativos", value: members.filter(m => m.status === MemberStatus.Active).length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Pag. Pendente", value: members.filter(m => m.status === MemberStatus.Pending).length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Alunos Inativos", value: members.filter(m => m.status === MemberStatus.Inactive).length, icon: <UsersIcon className="h-5 w-5"/> },
+  ]), [members]);
 
   const filteredMembers = useMemo(() => {
     return members.filter(member => {
@@ -95,11 +95,6 @@ export const MembersList: React.FC = () => {
 
   const getPlanName = (planId: string, plans: Plan[]): string => {
     return plans.find(p => p.id === planId)?.name || 'N/A';
-  };
-
-  const handleViewDetails = (member: Member) => {
-    setSelectedMember(member);
-    setIsDetailsModalOpen(true);
   };
 
   const handleEdit = (member: Member) => {
@@ -148,10 +143,11 @@ export const MembersList: React.FC = () => {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Alunos" value={stats.total} icon={<UsersIcon className="h-5 w-5"/>} />
-        <StatCard title="Alunos Ativos" value={stats.active} icon={<UsersIcon className="h-5 w-5"/>} />
-        <StatCard title="Pag. Pendente" value={stats.pending} icon={<UsersIcon className="h-5 w-5"/>} />
-        <StatCard title="Alunos Inativos" value={stats.inactive} icon={<UsersIcon className="h-5 w-5"/>} />
+        {stats.map((stat, index) => (
+            <div key={stat.title} className="animate-stagger" style={{ animationDelay: `${index * 100}ms` }}>
+                <StatCard {...stat} />
+            </div>
+        ))}
       </div>
 
       <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg space-y-4">
@@ -177,8 +173,8 @@ export const MembersList: React.FC = () => {
         </div>
       </div>
 
-
-      <div className="overflow-x-auto">
+      {/* Desktop Table View */}
+      <div className="overflow-x-auto hidden md:block">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300 uppercase">
@@ -196,7 +192,7 @@ export const MembersList: React.FC = () => {
                     key={member.id} 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer animate-stagger"
                     style={{ animationDelay: `${index * 50}ms` }}
-                    onClick={() => handleViewDetails(member)}
+                    onClick={() => openMemberDetails(member)}
                 >
                     <td className="p-4">
                         <div className="flex items-center">
@@ -237,6 +233,61 @@ export const MembersList: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+            {filteredMembers.length > 0 ? (
+                filteredMembers.map((member, index) => (
+                    <div 
+                        key={member.id} 
+                        className="bg-slate-50 dark:bg-gray-900/40 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 animate-stagger" 
+                        style={{ animationDelay: `${index * 70}ms` }}
+                        onClick={() => openMemberDetails(member)}
+                    >
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center mb-2">
+                                <Avatar name={member.name} />
+                                <div>
+                                    <p className="font-bold text-gray-800 dark:text-gray-100">{member.name}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
+                                </div>
+                            </div>
+                            <MemberStatusBadge status={member.status} />
+                        </div>
+
+                        <div className="border-t border-gray-200 dark:border-gray-700 my-3"></div>
+
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <p className="text-gray-500 dark:text-gray-400">Plano</p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">{getPlanName(member.planId, plans)}</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 dark:text-gray-400">Inscrição</p>
+                                <p className="font-medium text-gray-700 dark:text-gray-200">{new Date(member.joinDate).toLocaleDateString('pt-BR')}</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end space-x-1 mt-4" onClick={e => e.stopPropagation()}>
+                            {hasPermission(Permission.UPDATE_MEMBERS) && (
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
+                                    <EditIcon className="w-5 h-5" />
+                                </Button>
+                            )}
+                            {hasPermission(Permission.DELETE_MEMBERS) && (
+                                <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRequest(member.id)}>
+                                    <TrashIcon className="w-5 h-5" />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                    {members.length === 0 ? 'Nenhum aluno cadastrado ainda.' : 'Nenhum aluno encontrado com os filtros aplicados.'}
+                </div>
+            )}
+        </div>
       
       {isModalOpen && (
         <MemberFormModal
@@ -246,16 +297,6 @@ export const MembersList: React.FC = () => {
           updateMember={updateMember}
           member={editingMember}
           plans={plans}
-        />
-      )}
-
-      {isDetailsModalOpen && selectedMember && (
-        <MemberDetailsModal
-            isOpen={isDetailsModalOpen}
-            onClose={() => setIsDetailsModalOpen(false)}
-            member={selectedMember}
-            plan={plans.find(p => p.id === selectedMember.planId) || null}
-            payments={payments.filter(p => p.memberId === selectedMember.id)}
         />
       )}
 
