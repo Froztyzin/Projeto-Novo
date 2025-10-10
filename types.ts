@@ -1,54 +1,60 @@
+
+export type ViewType = 'dashboard' | 'members' | 'plans' | 'payments' | 'expenses' | 'reports' | 'calendar' | 'users' | 'settings' | 'audit-log';
+
+export type AuthView = 'adminLogin' | 'memberLogin' | 'requestReset' | 'resetPassword' | 'combinedLogin';
+
+export enum MemberStatus {
+    Active = 'Ativo',
+    Inactive = 'Inativo',
+    Pending = 'Pendente',
+}
+
 export enum PaymentStatus {
-  Paid = 'Pago',
-  Pending = 'Pendente',
-  Overdue = 'Vencido',
+    Paid = 'Pago',
+    Pending = 'Pendente',
+    Overdue = 'Vencido',
 }
 
 export enum ExpenseStatus {
-  Paid = 'Pago',
-  Pending = 'Pendente',
-  Overdue = 'Vencido',
-}
-
-export enum MemberStatus {
-  Active = 'Ativo',
-  Inactive = 'Inativo',
-  Pending = 'Pendente',
+    Paid = 'Pago',
+    Pending = 'Pendente',
+    Overdue = 'Vencido',
 }
 
 export enum ExpenseCategory {
-    Salaries = 'Salários',
     Rent = 'Aluguel',
+    Salaries = 'Salários',
     Equipment = 'Equipamentos',
     Marketing = 'Marketing',
+    Supplies = 'Suprimentos',
+    Utilities = 'Contas',
     Other = 'Outros',
 }
 
 export enum LogActionType {
-    USER_LOGIN = 'USER_LOGIN',
-    USER_LOGOUT = 'USER_LOGOUT',
-    CREATE_MEMBER = 'CREATE_MEMBER',
-    UPDATE_MEMBER = 'UPDATE_MEMBER',
-    DELETE_MEMBER = 'DELETE_MEMBER',
-    CREATE_PLAN = 'CREATE_PLAN',
-    UPDATE_PLAN = 'UPDATE_PLAN',
-    DELETE_PLAN = 'DELETE_PLAN',
-    CREATE_PAYMENT = 'CREATE_PAYMENT',
-    UPDATE_PAYMENT = 'UPDATE_PAYMENT',
-    DELETE_PAYMENT = 'DELETE_PAYMENT',
-    CREATE_EXPENSE = 'CREATE_EXPENSE',
-    UPDATE_EXPENSE = 'UPDATE_EXPENSE',
-    DELETE_EXPENSE = 'DELETE_EXPENSE',
-    CREATE_USER = 'CREATE_USER',
-    UPDATE_USER = 'UPDATE_USER',
-    DELETE_USER = 'DELETE_USER',
-    CREATE_ROLE = 'CREATE_ROLE',
-    UPDATE_ROLE = 'UPDATE_ROLE',
-    DELETE_ROLE = 'DELETE_ROLE',
-    IMPORT_DATA = 'IMPORT_DATA',
-    UPDATE_SETTINGS = 'UPDATE_SETTINGS',
+    USER_LOGIN = 'Login de Usuário',
+    USER_LOGOUT = 'Logout de Usuário',
+    CREATE_MEMBER = 'Criação de Aluno',
+    UPDATE_MEMBER = 'Atualização de Aluno',
+    DELETE_MEMBER = 'Exclusão de Aluno',
+    CREATE_PLAN = 'Criação de Plano',
+    UPDATE_PLAN = 'Atualização de Plano',
+    DELETE_PLAN = 'Exclusão de Plano',
+    CREATE_PAYMENT = 'Criação de Pagamento',
+    UPDATE_PAYMENT = 'Atualização de Pagamento',
+    DELETE_PAYMENT = 'Exclusão de Pagamento',
+    CREATE_EXPENSE = 'Criação de Despesa',
+    UPDATE_EXPENSE = 'Atualização de Despesa',
+    DELETE_EXPENSE = 'Exclusão de Despesa',
+    CREATE_USER = 'Criação de Usuário',
+    UPDATE_USER = 'Atualização de Usuário',
+    DELETE_USER = 'Exclusão de Usuário',
+    CREATE_ROLE = 'Criação de Função',
+    UPDATE_ROLE = 'Atualização de Função',
+    DELETE_ROLE = 'Exclusão de Função',
+    IMPORT_DATA = 'Importação de Dados',
+    UPDATE_SETTINGS = 'Atualização de Configurações',
 }
-
 
 export enum Permission {
   // Dashboard
@@ -73,20 +79,33 @@ export enum Permission {
   CREATE_EXPENSES = 'CREATE_EXPENSES',
   UPDATE_EXPENSES = 'UPDATE_EXPENSES',
   DELETE_EXPENSES = 'DELETE_EXPENSES',
-  // Users
-  VIEW_USERS = 'VIEW_USERS',
-  CREATE_USERS = 'CREATE_USERS',
-  UPDATE_USERS = 'UPDATE_USERS',
-  DELETE_USERS = 'DELETE_USERS',
   // Reports
   VIEW_REPORTS = 'VIEW_REPORTS',
   // Calendar
   VIEW_CALENDAR = 'VIEW_CALENDAR',
+  // Users & Roles
+  VIEW_USERS = 'VIEW_USERS',
+  CREATE_USERS = 'CREATE_USERS',
+  UPDATE_USERS = 'UPDATE_USERS',
+  DELETE_USERS = 'DELETE_USERS',
+  MANAGE_ROLES = 'MANAGE_ROLES',
   // Settings
   MANAGE_SETTINGS = 'MANAGE_SETTINGS',
-  MANAGE_ROLES = 'MANAGE_ROLES',
   // Audit Log
   VIEW_AUDIT_LOG = 'VIEW_AUDIT_LOG',
+}
+
+export interface Member {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  telefone?: string;
+  joinDate: Date;
+  planId: string;
+  status: MemberStatus;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
 }
 
 export interface Plan {
@@ -101,21 +120,11 @@ export interface Payment {
   id: string;
   memberId: string;
   planId: string;
-  description?: string;
   amount: number;
-  date: Date; // Due Date
-  paidDate?: Date; // Actual payment date
+  date: Date;
+  paidDate?: Date;
   status: PaymentStatus;
-}
-
-export interface Member {
-  id: string;
-  name: string;
-  email: string;
-  telefone?: string;
-  joinDate: Date;
-  planId: string;
-  status: MemberStatus;
+  description?: string;
 }
 
 export interface Expense {
@@ -139,18 +148,15 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   roleId: string;
 }
 
 export interface AuditLog {
-  id: string;
-  timestamp: Date;
-  userId: string;
-  userName: string;
-  action: LogActionType;
-  details: string;
+    id: string;
+    timestamp: Date;
+    userId: string;
+    userName: string;
+    action: LogActionType;
+    details: string;
 }
-
-
-export type ViewType = 'dashboard' | 'members' | 'plans' | 'payments' | 'expenses' | 'users' | 'reports' | 'calendar' | 'settings' | 'audit-log';

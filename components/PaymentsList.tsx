@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import type { Payment, Member, Plan } from '../types';
 import { Button } from './ui/Button';
@@ -199,7 +200,8 @@ export const PaymentsList: React.FC = () => {
                 <input type="text" name="searchTerm" placeholder="Buscar por aluno ou descrição..." value={filters.searchTerm} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" />
                 <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Status</option>
-                    {Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                    {/* FIX: Explicitly cast enum value to string for key prop */}
+                    {Object.values(PaymentStatus).map(s => <option key={s as string} value={s}>{s}</option>)}
                 </select>
                 <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" />
                 <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" />

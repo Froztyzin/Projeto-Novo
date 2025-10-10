@@ -1,15 +1,18 @@
+
+
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import type { Member, Plan } from '../types';
 import { MemberStatus, Permission } from '../types';
 import { MemberStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
-import { PlusCircleIcon, UsersIcon, EditIcon, TrashIcon } from './ui/Icons';
+import { PlusCircleIcon, UsersIcon, EditIcon, TrashIcon, MailIcon } from './ui/Icons';
 import { MemberFormModal } from './MemberFormModal';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { Skeleton } from './ui/Skeleton';
 import { Pagination } from './ui/Pagination';
 import { Avatar } from './ui/Avatar';
+import { useToast } from '../contexts/ToastContext';
 
 interface MembersListProps {
   openMemberDetails: (member: Member) => void;
@@ -51,7 +54,8 @@ const StatCard: React.FC<{ title: string; value: number | string; icon: React.Re
 );
 
 export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) => {
-  const { members, plans, payments, addMember, updateMember, deleteMember, hasPermission, isLoading } = useAppContext();
+  const { members, plans, payments, addMember, updateMember, deleteMember, hasPermission, isLoading, requestPasswordResetForMember } = useAppContext();
+  const { addToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,6 +120,11 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
     setIsConfirmModalOpen(false);
     setMemberToDelete(null);
   };
+  
+  const handleSendResetLink = async (email: string) => {
+    const result = await requestPasswordResetForMember(email);
+    addToast(result.message, result.success ? 'success' : 'error');
+  };
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -159,7 +168,8 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                 />
                 <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as MemberStatus | 'all')} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Status</option>
-                    {Object.values(MemberStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                    {/* FIX: Explicitly cast enum value to string for key prop */}
+                    {Object.values(MemberStatus).map(s => <option key={s as string} value={s}>{s}</option>)}
                 </select>
                 <select value={planFilter} onChange={e => setPlanFilter(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Planos</option>
@@ -207,6 +217,9 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                         <td className="p-4"><MemberStatusBadge status={member.status} /></td>
                         <td className="p-4">
                         <div className="flex items-center justify-end space-x-1" onClick={e => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" title="Enviar link para definir senha" onClick={() => handleSendResetLink(member.email)}>
+                                <MailIcon className="w-5 h-5" />
+                            </Button>
                             {hasPermission(Permission.UPDATE_MEMBERS) && (
                                 <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
                                     <EditIcon className="w-5 h-5" />
@@ -267,6 +280,9 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                             </div>
 
                             <div className="flex items-center justify-end space-x-1 mt-4" onClick={e => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon" title="Enviar link para definir senha" onClick={() => handleSendResetLink(member.email)}>
+                                    <MailIcon className="w-5 h-5" />
+                                </Button>
                                 {hasPermission(Permission.UPDATE_MEMBERS) && (
                                     <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
                                         <EditIcon className="w-5 h-5" />

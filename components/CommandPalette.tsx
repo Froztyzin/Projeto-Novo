@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Member, Plan, ViewType, User } from '../types';
 import { Permission } from '../types';
@@ -201,7 +199,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         plan: 'Planos',
         user: 'Usuários',
     };
-    const groupOrder: (keyof typeof groupTitles)[] = ['action', 'member', 'user', 'plan'];
+    const groupOrder = useMemo(() => ['action', 'member', 'user', 'plan'] as const, []);
 
     return (
         <div 
@@ -210,10 +208,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         >
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
             <div
-                className={`relative bg-white dark:bg-slate-800 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden transform transition-all duration-300 ease-out ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+                className={`relative bg-slate-900 w-full max-w-xl rounded-lg shadow-2xl overflow-hidden transform transition-all duration-300 ease-out border border-slate-700 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex items-center p-4 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center p-4 border-b border-slate-800">
                     <SearchIcon className="h-5 w-5 text-slate-400 mr-3" />
                     <input
                         ref={inputRef}
@@ -221,13 +219,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         placeholder="Buscar por alunos, planos, usuários ou ações..."
-                        className="w-full bg-transparent focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400"
+                        className="w-full bg-transparent focus:outline-none text-slate-100 placeholder-slate-400"
                     />
                 </div>
                 <div ref={resultsRef} className="max-h-[60vh] overflow-y-auto">
                     {filteredResults.length > 0 ? (
-                        // Fix: Replaced Object.entries with a direct mapping over `groupOrder`
-                        // to ensure type safety and correct ordering, resolving the "map is not a function" error.
                         groupOrder.map(group => {
                             const items = groupedResults[group];
                             if (!items || items.length === 0) return null;
@@ -247,14 +243,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                                                         item.action();
                                                         onClose();
                                                     }}
-                                                    className={`flex items-center px-4 py-3 cursor-pointer ${
-                                                        selectedIndex === globalIndex ? 'bg-primary-500 text-white' : 'text-slate-700 dark:text-slate-200'
+                                                    className={`flex items-center mx-2 px-3 py-3 cursor-pointer rounded-md ${
+                                                        selectedIndex === globalIndex ? 'bg-primary-600 text-white' : 'text-slate-200'
                                                     }`}
                                                 >
                                                     <span className={`mr-4 ${selectedIndex === globalIndex ? 'text-white' : 'text-slate-400'}`}>{item.icon}</span>
                                                     <div>
                                                         <p className={`font-medium ${selectedIndex === globalIndex ? 'text-white' : ''}`}>{item.title}</p>
-                                                        {item.description && <p className={`text-sm ${selectedIndex === globalIndex ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'}`}>{item.description}</p>}
+                                                        {item.description && <p className={`text-sm ${selectedIndex === globalIndex ? 'text-primary-100' : 'text-slate-400'}`}>{item.description}</p>}
                                                     </div>
                                                 </li>
                                             );

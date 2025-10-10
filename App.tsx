@@ -1,12 +1,12 @@
 
-
-
 import React, { useState, useEffect } from 'react';
-import type { ViewType, Member } from './types';
-import { Permission } from './types';
+import { AppProvider, useAppContext } from './contexts/AppContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { ToastContainer } from './components/ui/Toast';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { MembersList } from './components/MembersList';
+import { MemberDetailsModal } from './components/MemberDetailsModal';
 import { PlansList } from './components/PlansList';
 import { PaymentsList } from './components/PaymentsList';
 import { ExpensesList } from './components/ExpensesList';
@@ -15,237 +15,150 @@ import { CalendarView } from './components/CalendarView';
 import { Settings } from './components/Settings';
 import { UsersList } from './components/UsersList';
 import { AuditLogList } from './components/AuditLogList';
-import { MenuIcon, ChevronRightIcon } from './components/ui/Icons';
-import { AppProvider, useAppContext } from './contexts/AppContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { ToastContainer } from './components/ui/Toast';
-import { LoginPage } from './components/LoginPage';
 import { AIAssistant } from './components/AIAssistant';
-import ErrorBoundary from './components/ErrorBoundary';
-import { BottomNavBar } from './components/BottomNavBar';
 import { CommandPalette } from './components/CommandPalette';
-import { MemberDetailsModal } from './components/MemberDetailsModal';
+import { BottomNavBar } from './components/BottomNavBar';
+import ErrorBoundary from './components/ErrorBoundary';
+import { MenuIcon } from './components/ui/Icons';
+import type { ViewType, Member, Plan, Payment, AuthView } from './types';
+import { CombinedLoginPage } from './components/CombinedLoginPage';
+import { RequestPasswordResetPage } from './components/RequestPasswordResetPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
+import { MemberPortal } from './components/MemberPortal';
 
-const MainApplication: React.FC = () => {
-  const [view, setView] = useState<ViewType>('dashboard');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // Fix: Removed `getPlanName` as it's not provided by the AppContext.
-  const { hasPermission, currentUserRole, members, plans, payments } = useAppContext();
-  
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedMemberForDetails, setSelectedMemberForDetails] = useState<Member | null>(null);
+const AppContent: React.FC = () => {
+    const { isAuthenticated, isAuthenticatedMember, isAuthLoading, members, plans, payments, logo } = useAppContext();
+    const [view, setView] = useState<ViewType>('dashboard');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    
+    // Auth view state for member login/reset flow
+    const [authView, setAuthView] = useState<AuthView>('combinedLogin');
+    const [resetToken, setResetToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const viewPermissionMap: Record<ViewType, Permission | Permission[]> = {
-      dashboard: Permission.VIEW_DASHBOARD,
-      members: Permission.VIEW_MEMBERS,
-      plans: Permission.VIEW_PLANS,
-      payments: Permission.VIEW_PAYMENTS,
-      expenses: Permission.VIEW_EXPENSES,
-      users: Permission.VIEW_USERS,
-      reports: Permission.VIEW_REPORTS,
-      calendar: Permission.VIEW_CALENDAR,
-      settings: Permission.MANAGE_SETTINGS,
-      'audit-log': Permission.VIEW_AUDIT_LOG,
-    };
+    const [isMemberDetailsModalOpen, setMemberDetailsModalOpen] = useState(false);
+    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+    const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
-    const requiredPermission = viewPermissionMap[view];
-    let isAuthorized = false;
-
-    if (Array.isArray(requiredPermission)) {
-        isAuthorized = requiredPermission.some(p => hasPermission(p));
-    } else if (requiredPermission) {
-        isAuthorized = hasPermission(requiredPermission);
-    }
-
-    if (!isAuthorized) {
-        const availableViews: ViewType[] = [
-            'dashboard', 'members', 'plans', 'payments', 'expenses', 'users', 'reports', 'calendar', 'settings', 'audit-log'
-        ];
-        
-        const fallbackView = availableViews.find(v => {
-            const perm = viewPermissionMap[v];
-            if (Array.isArray(perm)) {
-                return perm.some(p => hasPermission(p));
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsCommandPaletteOpen(isOpen => !isOpen);
             }
-            return hasPermission(perm as Permission);
-        });
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+    
+    const openMemberDetails = (member: Member) => {
+        setSelectedMember(member);
+        setMemberDetailsModalOpen(true);
+    };
 
-        if (fallbackView && fallbackView !== view) {
-            setView(fallbackView);
+    const closeMemberDetails = () => {
+        setMemberDetailsModalOpen(false);
+        setSelectedMember(null);
+    };
+
+    const renderView = () => {
+        switch (view) {
+            case 'dashboard': return <Dashboard />;
+            case 'members': return <MembersList openMemberDetails={openMemberDetails} />;
+            case 'plans': return <PlansList />;
+            case 'payments': return <PaymentsList />;
+            case 'expenses': return <ExpensesList />;
+            case 'reports': return <Reports />;
+            case 'calendar': return <CalendarView />;
+            case 'settings': return <Settings />;
+            case 'users': return <UsersList />;
+            case 'audit-log': return <AuditLogList />;
+            default: return <Dashboard />;
         }
-    }
-  }, [view, currentUserRole, hasPermission]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        setIsPaletteOpen(open => !open);
-      }
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-  
-  const openMemberDetails = (member: Member) => {
-    setSelectedMemberForDetails(member);
-    setIsDetailsModalOpen(true);
-  };
-
-
-  const renderView = () => {
-    switch (view) {
-      case 'dashboard': return <Dashboard />;
-      case 'members': return <MembersList openMemberDetails={openMemberDetails} />;
-      case 'plans': return <PlansList />;
-      case 'payments': return <PaymentsList />;
-      case 'expenses': return <ExpensesList />;
-      case 'users': return <UsersList />;
-      case 'reports': return <Reports />;
-      case 'calendar': return <CalendarView />;
-      case 'settings': return <Settings />;
-      case 'audit-log': return <AuditLogList />;
-      default: return <Dashboard />;
-    }
-  };
-
-  const viewTitles: { [key in ViewType]: string } = {
-    dashboard: 'Painel',
-    members: 'Gerenciamento de Alunos',
-    plans: 'Planos de Matrícula',
-    payments: 'Controle de Pagamentos',
-    expenses: 'Gerenciamento de Despesas',
-    users: 'Gerenciamento de Usuários',
-    reports: 'Relatórios de Pagamentos',
-    calendar: 'Calendário de Pagamentos',
-    settings: 'Configurações do Sistema',
-    'audit-log': 'Registro de Atividades',
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100 dark:bg-slate-900 text-gray-800 dark:text-gray-200">
-      <Sidebar
-        currentView={view}
-        setView={setView}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-          <button
-            className="text-gray-500 focus:outline-none lg:hidden"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <MenuIcon className="h-6 w-6" />
-          </button>
-          <div className="flex items-center text-xl md:text-2xl font-semibold">
-            {view !== 'dashboard' ? (
-                <>
-                    <button 
-                        onClick={() => setView('dashboard')} 
-                        className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                    >
-                        Painel
-                    </button>
-                    <ChevronRightIcon className="h-5 w-5 mx-1 text-gray-400 dark:text-gray-500" />
-                    <h1 className="text-gray-800 dark:text-gray-200">{viewTitles[view]}</h1>
-                </>
-            ) : (
-                <h1 className="text-gray-800 dark:text-gray-200">{viewTitles[view]}</h1>
-            )}
-          </div>
-           <button 
-                onClick={() => setIsPaletteOpen(true)}
-                className="hidden md:flex items-center text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-            >
-                Busca Rápida
-                <span className="ml-2 text-xs font-mono bg-slate-200 dark:bg-slate-600 px-1.5 py-0.5 rounded">
-                    Ctrl+K
-                </span>
-            </button>
-        </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-6 lg:pb-8">
-          <div key={view} className="animate-fadeIn">
-            {renderView()}
-          </div>
-        </main>
-      </div>
-      <BottomNavBar currentView={view} setView={setView} />
-      <AIAssistant />
-      <CommandPalette 
-        isOpen={isPaletteOpen}
-        onClose={() => setIsPaletteOpen(false)}
-        setView={setView}
-        openMemberDetails={openMemberDetails}
-      />
-      {isDetailsModalOpen && selectedMemberForDetails && (
-        <MemberDetailsModal
-            isOpen={isDetailsModalOpen}
-            onClose={() => {
-                setIsDetailsModalOpen(false);
-                setSelectedMemberForDetails(null);
-            }}
-            member={selectedMemberForDetails}
-            plan={plans.find(p => p.id === selectedMemberForDetails.planId) || null}
-            payments={payments.filter(p => p.memberId === selectedMemberForDetails.id)}
-            plans={plans}
-        />
-      )}
-      <ToastContainer />
-    </div>
-  );
-};
-
-
-const AuthResolver: React.FC = () => {
-    const { isAuthenticated, isAuthLoading } = useAppContext();
-
+    
     if (isAuthLoading) {
         return (
-            <div className="flex h-screen w-screen items-center justify-center bg-gray-100 dark:bg-slate-900">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary-500 border-t-transparent"></div>
+            <div className="flex h-screen w-screen items-center justify-center bg-slate-950">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500"></div>
             </div>
-        );
+        )
+    }
+
+    if (isAuthenticatedMember) {
+        return <MemberPortal />;
     }
 
     if (!isAuthenticated) {
-        return (
-            <>
-                <LoginPage />
-                <ToastContainer />
-            </>
-        );
+        switch(authView) {
+            case 'requestReset':
+                return <RequestPasswordResetPage setAuthView={setAuthView} setResetToken={setResetToken} />;
+            case 'resetPassword':
+                return <ResetPasswordPage setAuthView={setAuthView} token={resetToken} />;
+            case 'combinedLogin':
+            default:
+                return <CombinedLoginPage setAuthView={setAuthView} />;
+        }
     }
-    
-    return <MainApplication />;
+
+    const selectedMemberPlan = selectedMember ? plans.find(p => p.id === selectedMember.planId) : null;
+    const selectedMemberPayments = selectedMember ? payments.filter(p => p.memberId === selectedMember.id) : [];
+
+    return (
+        <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
+            <Sidebar currentView={view} setView={setView} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            <main className="flex-1 flex flex-col overflow-hidden">
+                 <header className="lg:hidden flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shadow-md">
+                     <div className="flex items-center space-x-2">
+                        {logo ? (
+                          <img src={logo} alt="Logo" className="max-h-8 w-auto" />
+                        ) : (
+                          <h1 className="text-xl font-bold">Elite Corpus</h1>
+                        )}
+                    </div>
+                    <button onClick={() => setSidebarOpen(true)} className="text-slate-400">
+                        <MenuIcon className="h-6 w-6" />
+                    </button>
+                </header>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950/70">
+                    {renderView()}
+                </div>
+            </main>
+            <AIAssistant />
+            <CommandPalette 
+                isOpen={isCommandPaletteOpen} 
+                onClose={() => setIsCommandPaletteOpen(false)} 
+                setView={setView}
+                openMemberDetails={(member) => {
+                    openMemberDetails(member);
+                    setIsCommandPaletteOpen(false);
+                }}
+            />
+            {selectedMember && (
+                <MemberDetailsModal
+                    isOpen={isMemberDetailsModalOpen}
+                    onClose={closeMemberDetails}
+                    member={selectedMember}
+                    plan={selectedMemberPlan}
+                    payments={selectedMemberPayments}
+                    plans={plans}
+                />
+            )}
+            <BottomNavBar currentView={view} setView={setView} />
+        </div>
+    );
 };
 
-
 const App: React.FC = () => {
-  useEffect(() => {
-    if (localStorage.getItem('theme') === 'dark' || 
-        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
-    }
-  }, []);
-
-  return (
-    // Fix: Removed comment explaining a fix that is already present in the code.
-    <ErrorBoundary>
-      <ToastProvider>
-        <AppProvider>
-          <AuthResolver />
-        </AppProvider>
-      </ToastProvider>
-    </ErrorBoundary>
-  );
+    return (
+        <ErrorBoundary>
+            <ToastProvider>
+                <AppProvider>
+                    <AppContent />
+                    <ToastContainer />
+                </AppProvider>
+            </ToastProvider>
+        </ErrorBoundary>
+    );
 };
 
 export default App;

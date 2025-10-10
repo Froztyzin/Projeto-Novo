@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -11,6 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
@@ -40,40 +41,26 @@
       html {
         scroll-behavior: smooth;
       }
-      /* Custom Scrollbar for Webkit browsers */
+      /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background-color: #f1f5f9; /* slate-100 */
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: #cbd5e1; /* slate-300 */
-        border-radius: 10px;
-        border: 2px solid #f1f5f9; /* slate-100 */
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background-color: #94a3b8; /* slate-400 */
-      }
-      html.dark ::-webkit-scrollbar-track {
         background-color: #1e293b; /* slate-800 */
       }
-      html.dark ::-webkit-scrollbar-thumb {
+      ::-webkit-scrollbar-thumb {
         background-color: #475569; /* slate-600 */
-        border-color: #1e293b; /* slate-800 */
+        border-radius: 10px;
+        border: 2px solid #1e293b; /* slate-800 */
       }
-      html.dark ::-webkit-scrollbar-thumb:hover {
+      ::-webkit-scrollbar-thumb:hover {
         background-color: #64748b; /* slate-500 */
       }
 
-      /* Custom Scrollbar for Firefox */
       * {
         scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 #f1f5f9; /* thumb track */
-      }
-      html.dark * {
-          scrollbar-color: #475569 #1e293b;
+        scrollbar-color: #475569 #1e293b; /* thumb track */
       }
 
       @keyframes fadeIn {
@@ -106,9 +93,6 @@
       .ai-content ol { list-style-type: decimal; }
       .ai-content li { margin-bottom: 0.25rem; }
       .ai-content li::marker { 
-        color: #64748b; /* slate-500 */
-      }
-      html.dark .ai-content li::marker {
         color: #94a3b8; /* slate-400 */
       }
     </style>
@@ -119,12 +103,14 @@
     "react": "https://aistudiocdn.com/react@^19.1.1",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
     "recharts": "https://aistudiocdn.com/recharts@^3.2.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0"
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^0.15.0",
+    "dompurify": "https://aistudiocdn.com/dompurify@^3.2.7",
+    "marked": "https://aistudiocdn.com/marked@^16.4.0"
   }
 }
 </script>
 </head>
-  <body class="bg-gray-100 dark:bg-slate-900 font-sans">
+  <body class="bg-slate-950 font-sans text-slate-300">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

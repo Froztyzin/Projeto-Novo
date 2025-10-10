@@ -19,8 +19,8 @@ const NavItem: React.FC<{
     onClick={onClick}
     className={`flex flex-col items-center justify-center h-full text-xs transition-colors duration-200 focus:outline-none ${
       isActive
-        ? 'text-primary-600 dark:text-primary-400'
-        : 'text-gray-500 dark:text-gray-400 hover:text-primary-500 dark:hover:text-primary-300'
+        ? 'text-primary-400'
+        : 'text-slate-400 hover:text-primary-300'
     }`}
   >
     {icon}
@@ -45,7 +45,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({ currentView, setView
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700 shadow-lg md:hidden z-30">
+    <nav className="fixed bottom-0 left-0 right-0 h-16 bg-slate-900 border-t border-slate-800 shadow-lg md:hidden z-30">
       <div className={`grid h-full`} style={{ gridTemplateColumns: `repeat(${visibleItems.length}, 1fr)`}}>
         {visibleItems.map(item => (
           <NavItem

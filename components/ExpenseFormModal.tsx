@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import type { Expense } from '../types';
 import { ExpenseCategory, ExpenseStatus } from '../types';
@@ -48,7 +49,7 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({ isOpen, onCl
         status: ExpenseStatus.Pending,
       });
     }
-  }, [expense]);
+  }, [expense, isOpen]);
 
   // Auto-set status based on date
   useEffect(() => {
@@ -112,16 +113,18 @@ export const ExpenseFormModal: React.FC<ExpenseFormModalProps> = ({ isOpen, onCl
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Categoria</label>
           <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+            {/* FIX: Explicitly cast enum value to string for key prop */}
             {Object.values(ExpenseCategory).map(category => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category as string} value={category}>{category}</option>
             ))}
           </select>
         </div>
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
           <select name="status" id="status" value={formData.status} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+            {/* FIX: Explicitly cast enum value to string for key prop */}
             {Object.values(ExpenseStatus).map(status => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status as string} value={status}>{status}</option>
             ))}
           </select>
         </div>

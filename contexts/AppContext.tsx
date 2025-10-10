@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
 import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
@@ -13,8 +14,8 @@ const initialPlans: Plan[] = [
 ];
 
 const initialMembers: Member[] = [
-  { id: 'mem1', name: 'Alice Johnson', email: 'alice@example.com', telefone: '(11) 98765-4321', joinDate: new Date('2023-01-15'), planId: 'plan3', status: MemberStatus.Active },
-  { id: 'mem2', name: 'Bob Williams', email: 'bob@example.com', telefone: '(21) 91234-5678', joinDate: new Date('2023-03-22'), planId: 'plan1', status: MemberStatus.Active },
+  { id: 'mem1', name: 'Alice Johnson', email: 'alice@example.com', password: 'password', telefone: '(11) 98765-4321', joinDate: new Date('2023-01-15'), planId: 'plan3', status: MemberStatus.Active },
+  { id: 'mem2', name: 'Bob Williams', email: 'bob@example.com', password: 'password', telefone: '(21) 91234-5678', joinDate: new Date('2023-03-22'), planId: 'plan1', status: MemberStatus.Active },
   { id: 'mem3', name: 'Charlie Brown', email: 'charlie@example.com', joinDate: new Date(new Date().setMonth(new Date().getMonth() - 2)), planId: 'plan2', status: MemberStatus.Pending },
   { id: 'mem4', name: 'Diana Prince', email: 'diana@example.com', telefone: '(31) 99999-8888', joinDate: new Date('2022-11-01'), planId: 'plan3', status: MemberStatus.Inactive },
   { id: 'mem5', name: 'Ethan Hunt', email: 'ethan@example.com', joinDate: new Date('2023-06-20'), planId: 'plan1', status: MemberStatus.Active },
@@ -100,6 +101,8 @@ interface AppContextType {
   isAuthLoading: boolean;
   isAuthenticated: boolean;
   currentUser: User | null;
+  isAuthenticatedMember: boolean;
+  currentMember: Member | null;
   members: Member[];
   plans: Plan[];
   payments: Payment[];
@@ -117,6 +120,10 @@ interface AppContextType {
   updateBillingRulerSettings: (settings: BillingRulerSettings) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
+  loginMember: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  updateCurrentMemberProfile: (data: { email?: string, telefone?: string }) => void;
+  requestPasswordResetForMember: (email: string) => Promise<{ success: boolean; message: string; token?: string }>;
+  resetMemberPassword: (token: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   addMember: (member: Omit<Member, 'id'>) => void;
   updateMember: (updatedMember: Member) => void;
   deleteMember: (memberId: string) => void;
@@ -152,6 +159,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Auth states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthenticatedMember, setIsAuthenticatedMember] = useState(false);
+  const [currentMember, setCurrentMember] = useState<Member | null>(null);
   // Data states
   const [plans, setPlans] = useState<Plan[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -164,7 +173,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   // Customization states
   const [logo, setLogo] = useState<string | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('#22c55e');
+  const [primaryColor, setPrimaryColor] = useState('#8b5cf6');
   const [billingRulerSettings, setBillingRulerSettings] = useState<BillingRulerSettings>({
     reminderBeforeDue: { enabled: true, days: 3 },
     reminderOnDue: { enabled: true },
@@ -188,6 +197,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const checkAuthStatus = () => {
         const storedUserId = localStorage.getItem('currentUserId');
+        const storedMemberId = localStorage.getItem('currentMemberId');
+
         if (storedUserId) {
             const user = initialUsers.find(u => u.id === storedUserId);
             if (user) {
@@ -195,6 +206,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 setCurrentUser(user);
                 setCurrentUserRole(user.roleId);
             }
+        } else if (storedMemberId) {
+             const member = initialMembers.find(m => m.id === storedMemberId);
+             if (member) {
+                setIsAuthenticatedMember(true);
+                setCurrentMember(member);
+             }
         }
         setIsAuthLoading(false);
     };
@@ -270,13 +287,85 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return { success: false, message: 'Credenciais inválidas.' };
   };
 
+  const loginMember = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+      const member = members.find(m => m.email === email);
+      if (member && member.password === password) {
+          setIsAuthenticatedMember(true);
+          setCurrentMember(member);
+          localStorage.setItem('currentMemberId', member.id);
+          addToast(`Bem-vindo(a), ${member.name}!`, 'success');
+          return { success: true };
+      }
+       if (member && !member.password) {
+        return { success: false, message: 'Você precisa definir uma senha. Use o link "Esqueceu sua senha ou primeiro acesso?".' };
+      }
+      return { success: false, message: 'E-mail ou senha inválidos.' };
+  }
+
   const logout = () => {
-      addAuditLog(LogActionType.USER_LOGOUT, 'Fez logout do sistema.');
+      if(currentUser) {
+        addAuditLog(LogActionType.USER_LOGOUT, 'Fez logout do sistema.');
+      }
       setIsAuthenticated(false);
       setCurrentUser(null);
       setCurrentUserRole('');
       localStorage.removeItem('currentUserId');
+      
+      setIsAuthenticatedMember(false);
+      setCurrentMember(null);
+      localStorage.removeItem('currentMemberId');
+
       addToast('Você saiu com sucesso.', 'info');
+  };
+  
+  const requestPasswordResetForMember = async (email: string): Promise<{ success: boolean; message: string; token?: string }> => {
+    const memberIndex = members.findIndex(m => m.email === email);
+    
+    if (memberIndex === -1) {
+        // To prevent user enumeration, we return a success message even if the email doesn't exist.
+        // In a real app, the email sending would fail silently on the backend.
+        return { success: true, message: 'Se um aluno com este e-mail existir, um link de redefinição de senha foi enviado.' };
+    }
+
+    const token = `reset-${Date.now()}-${Math.random()}`;
+    const expires = new Date(Date.now() + 3600000); // 1 hour expiry
+
+    setMembers(prev => {
+        const updatedMembers = [...prev];
+        updatedMembers[memberIndex] = { ...updatedMembers[memberIndex], passwordResetToken: token, passwordResetExpires: expires };
+        return updatedMembers;
+    });
+    
+    console.log(`Password reset token for ${email}: ${token}`);
+    
+    return { success: true, message: 'Se um aluno com este e-mail existir, um link de redefinição de senha foi enviado.', token };
+  };
+
+  const resetMemberPassword = async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+      const memberIndex = members.findIndex(m => m.passwordResetToken === token);
+
+      if (memberIndex === -1) {
+          return { success: false, message: 'Token de redefinição inválido.' };
+      }
+      
+      const member = members[memberIndex];
+
+      if (!member.passwordResetExpires || new Date() > member.passwordResetExpires) {
+          setMembers(prev => {
+              const updatedMembers = [...prev];
+              updatedMembers[memberIndex] = { ...member, passwordResetToken: undefined, passwordResetExpires: undefined };
+              return updatedMembers;
+          });
+          return { success: false, message: 'Token de redefinição expirado. Por favor, solicite um novo.' };
+      }
+
+      setMembers(prev => {
+          const updatedMembers = [...prev];
+          updatedMembers[memberIndex] = { ...member, password: newPassword, passwordResetToken: undefined, passwordResetExpires: undefined };
+          return updatedMembers;
+      });
+
+      return { success: true, message: 'Senha redefinida com sucesso!' };
   };
 
 
@@ -314,7 +403,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // --- Gemini AI ---
   const getAIResponse = async (prompt: string): Promise<string> => {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      if (!process.env.API_KEY) {
+        return "A chave da API do Gemini não foi configurada. Verifique as variáveis de ambiente.";
+      }
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const dataContext = {
         alunos: members.map(m => ({ ...m, plano: plans.find(p => p.id === m.planId)?.name || 'N/A' })),
@@ -359,7 +451,10 @@ ${JSON.stringify(dataContext, null, 2)}
   
   const getDashboardInsights = async (periodData: any): Promise<string> => {
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        if (!process.env.API_KEY) {
+            return "A chave da API do Gemini não foi configurada para gerar insights.";
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
         const systemInstruction = `Você é um analista de negócios sênior para o sistema de gestão de academias Ellite Corpus.
         Sua tarefa é analisar os dados do painel de um determinado período e fornecer um resumo conciso e acionável para o gestor da academia.
@@ -395,7 +490,10 @@ ${JSON.stringify(dataContext, null, 2)}
 
  const getReportInsights = async (reportData: any): Promise<string> => {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+      if (!process.env.API_KEY) {
+        return "A chave da API do Gemini não está configurada para gerar insights do relatório.";
+      }
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
       const systemInstruction = `Você é um analista financeiro especializado em academias, trabalhando com o sistema Ellite Corpus.
       Sua tarefa é analisar os dados de um relatório de pagamentos filtrado e gerar um insight acionável para o gestor.
@@ -502,10 +600,18 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   // --- CRUD Functions ---
+  const updateCurrentMemberProfile = (data: { email?: string; telefone?: string }) => {
+    if (!currentMember) return;
+    const updatedMember = { ...currentMember, ...data };
+    setCurrentMember(updatedMember);
+    setMembers(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
+    addToast('Perfil atualizado com sucesso!', 'success');
+  };
+
   const addMember = (member: Omit<Member, 'id'>) => {
     const newMember = { ...member, id: `mem${Date.now()}` };
     setMembers(prev => [...prev, newMember]);
-    addToast('Aluno adicionado com sucesso!', 'success');
+    addToast('Aluno adicionado com sucesso! Envie um link para que ele(a) defina a senha.', 'success');
     addAuditLog(LogActionType.CREATE_MEMBER, `Adicionou o aluno(a) "${newMember.name}".`);
   };
   
@@ -516,6 +622,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   const deleteMember = (memberId: string) => {
+    // FIX: Find member before deleting to get their name for the audit log.
     const memberToDelete = members.find(m => m.id === memberId);
     setMembers(prev => prev.filter(m => m.id !== memberId));
     addToast('Aluno excluído com sucesso!', 'success');
@@ -538,6 +645,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
   
   const deletePlan = (planId: string) => {
+    // FIX: Find plan before deleting to get its name for the audit log.
      const planToDelete = plans.find(p => p.id === planId);
      setPlans(prev => prev.filter(p => p.id !== planId));
      addToast('Plano excluído com sucesso!', 'success');
@@ -588,6 +696,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   const deleteExpense = (expenseId: string) => {
+    // FIX: Find expense before deleting to get its description for the audit log.
     const expenseToDelete = expenses.find(e => e.id === expenseId);
     setExpenses(prev => prev.filter(e => e.id !== expenseId));
     addToast('Despesa excluída com sucesso!', 'success');
@@ -610,6 +719,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   const deleteRole = (roleId: string) => {
+      // FIX: Find role before deleting to get its name for the audit log.
       const roleToDelete = roles.find(r => r.id === roleId);
       setRoles(prev => prev.filter(r => r.id !== roleId));
       addToast('Função excluída com sucesso!', 'success');
@@ -636,6 +746,7 @@ ${JSON.stringify(dataContext, null, 2)}
           addToast('Você não pode excluir a si mesmo.', 'error');
           return;
       }
+      // FIX: Find user before deleting to get their name for the audit log.
       const userToDelete = users.find(u => u.id === userId);
       setUsers(prev => prev.filter(u => u.id !== userId));
       addToast('Usuário excluído com sucesso!', 'success');
@@ -674,10 +785,12 @@ ${JSON.stringify(dataContext, null, 2)}
 
   const value = {
     isLoading, isAuthLoading, isAuthenticated, currentUser,
+    isAuthenticatedMember, currentMember,
     members, plans, payments, expenses, roles, users, auditLogs, currentUserRole, hasPermission,
     logo, primaryColor, billingRulerSettings,
     updateLogo, updatePrimaryColor, updateBillingRulerSettings,
-    login, logout,
+    login, logout, loginMember, updateCurrentMemberProfile,
+    requestPasswordResetForMember, resetMemberPassword,
     addMember, updateMember, deleteMember,
     addPlan, updatePlan, deletePlan,
     addPayment, updatePayment, deletePayment,

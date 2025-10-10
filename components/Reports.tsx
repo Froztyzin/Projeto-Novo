@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Payment } from '../types';
@@ -197,7 +198,8 @@ export const Reports: React.FC = () => {
             className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"
           >
             <option value="all">Todos</option>
-            {Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}
+            {/* FIX: Explicitly cast enum value to string for key prop */}
+            {Object.values(PaymentStatus).map(s => <option key={s as string} value={s}>{s}</option>)}
           </select>
         </div>
         <div>

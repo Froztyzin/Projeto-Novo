@@ -1,9 +1,7 @@
-
-
 import React from 'react';
 import type { ViewType } from '../types';
 import { Permission } from '../types';
-import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon } from './ui/Icons';
+import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon, DumbbellIcon } from './ui/Icons';
 import { useAppContext } from '../contexts/AppContext';
 
 interface SidebarProps {
@@ -26,12 +24,12 @@ const NavLink: React.FC<{
       e.preventDefault();
       onClick();
     }}
-    className={`flex items-center px-4 py-3 text-lg rounded-lg transition-colors duration-200 ${
+    className={`flex items-center px-4 py-3 text-lg rounded-lg transition-all duration-200 group ${
       isActive
-        ? 'bg-primary-600 text-white font-semibold shadow-lg'
+        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg'
         : isLogout
-        ? 'text-red-500 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10'
-        : 'text-gray-500 hover:bg-primary-100 hover:text-primary-700 dark:text-gray-400 dark:hover:bg-slate-700'
+        ? 'text-red-400 hover:bg-red-500/10'
+        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
     }`}
   >
     {icon}
@@ -62,18 +60,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     
   return (
     <>
-      <div className={`fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
+      <div className={`fixed inset-0 bg-black bg-opacity-60 z-20 lg:hidden transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
       <aside
-        className={`fixed top-0 left-0 h-full bg-white dark:bg-slate-800 w-64 border-r border-gray-200 dark:border-slate-700 p-5 transform transition-transform duration-300 ease-in-out z-30 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 lg:w-72 flex flex-col`}
+        className={`fixed top-0 left-0 h-full bg-slate-900 w-64 border-r border-slate-800 p-5 transform transition-transform duration-300 ease-in-out z-30 ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 lg:w-72 flex flex-col`}
       >
         <div>
           <div className="flex justify-between items-center mb-10 h-12">
             {logo ? (
               <img src={logo} alt="Logo" className="max-h-12 w-auto" />
             ) : (
-              <h1 className="text-3xl font-bold text-primary-600 dark:text-primary-400">Ellite Corpus</h1>
+              <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-slate-800 rounded-lg">
+                      <DumbbellIcon className="h-7 w-7 text-white" />
+                  </div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-100">
+                      Elite Corpus
+                  </h1>
+              </div>
             )}
-            <button className="lg:hidden text-gray-500 dark:text-gray-400" onClick={() => setIsOpen(false)}>
+            <button className="lg:hidden text-slate-400" onClick={() => setIsOpen(false)}>
               <XIcon className="w-6 h-6"/>
             </button>
           </div>
