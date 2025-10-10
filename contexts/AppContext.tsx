@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
 import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
@@ -143,10 +142,11 @@ interface AppContextType {
   updateUser: (updatedUser: User) => void;
   deleteUser: (userId: string) => void;
   importData: (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => void;
-  manuallyTriggerBilling: () => void;
+  runAutomatedBillingCycle: () => void;
   getAIResponse: (prompt: string) => Promise<string>;
   getDashboardInsights: (periodData: any) => Promise<string>;
   getReportInsights: (reportData: any) => Promise<string>;
+  getSystemNotifications: () => { title: string, message: string }[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -177,7 +177,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [billingRulerSettings, setBillingRulerSettings] = useState<BillingRulerSettings>({
     reminderBeforeDue: { enabled: true, days: 3 },
     reminderOnDue: { enabled: true },
-    reminderAfterDue: { enabled: false, days: 5 },
+    reminderAfterDue: { enabled: true, days: 5 },
   });
   
   // --- Audit Log Helper ---
@@ -527,7 +527,7 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   // --- Billing Automation ---
-  const manuallyTriggerBilling = () => {
+  const runAutomatedBillingCycle = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -555,31 +555,31 @@ ${JSON.stringify(dataContext, null, 2)}
             .filter(p => p.memberId === member.id)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        const lastPayment = memberPayments[0];
-        if (!lastPayment) return;
-
-        let nextDueDate = new Date(lastPayment.date);
-        nextDueDate.setMonth(nextDueDate.getMonth() + plan.durationInMonths);
-
-        if (plan.dueDateDayOfMonth) {
-            nextDueDate.setDate(plan.dueDateDayOfMonth);
-        }
+        const lastPaymentDate = memberPayments.length > 0 ? new Date(memberPayments[0].date) : new Date(member.joinDate);
         
-        if (nextDueDate <= today) {
-            const paymentForNextCycleExists = memberPayments.some(p => {
+        let nextDueDate = new Date(lastPaymentDate);
+
+        while (nextDueDate <= today) {
+            nextDueDate.setMonth(nextDueDate.getMonth() + plan.durationInMonths);
+
+            if (plan.dueDateDayOfMonth) {
+                nextDueDate.setDate(plan.dueDateDayOfMonth);
+            }
+            
+            const paymentForNextCycleExists = currentPayments.some(p => {
                 const pDate = new Date(p.date);
-                return pDate.getFullYear() === nextDueDate.getFullYear() && pDate.getMonth() === nextDueDate.getMonth();
+                return p.memberId === member.id && pDate.getFullYear() === nextDueDate.getFullYear() && pDate.getMonth() === nextDueDate.getMonth();
             });
 
-            if (!paymentForNextCycleExists) {
+            if (!paymentForNextCycleExists && nextDueDate <= today) {
                 const newStatus = nextDueDate < today ? PaymentStatus.Overdue : PaymentStatus.Pending;
                 newPaymentsToGenerate.push({
-                    id: `pay-auto-${Date.now()}-${member.id}`,
+                    id: `pay-auto-${Date.now()}-${member.id}-${newPaymentsToGenerate.length}`,
                     memberId: member.id,
                     planId: plan.id,
                     description: `Cobrança recorrente - ${plan.name}`,
                     amount: plan.price,
-                    date: nextDueDate,
+                    date: new Date(nextDueDate),
                     status: newStatus,
                 });
             }
@@ -587,17 +587,70 @@ ${JSON.stringify(dataContext, null, 2)}
     });
     
     if (statusesUpdatedCount > 0 || newPaymentsToGenerate.length > 0) {
-        setPayments([...currentPayments, ...newPaymentsToGenerate].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setPayments(prev => [...prev.map(p => {
+             if (p.status === PaymentStatus.Pending && new Date(p.date) < today) {
+                return { ...p, status: PaymentStatus.Overdue };
+            }
+            return p;
+        }), ...newPaymentsToGenerate].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     }
     
     if (newPaymentsToGenerate.length > 0) {
-        addToast(`${newPaymentsToGenerate.length} nova(s) cobrança(s) gerada(s).`, 'success');
+        addToast(`${newPaymentsToGenerate.length} nova(s) cobrança(s) gerada(s) automaticamente.`, 'success');
     } else if (statusesUpdatedCount > 0) {
         addToast(`${statusesUpdatedCount} pagamento(s) foram atualizados para "Vencido".`, 'info');
-    } else {
-        addToast('Nenhuma nova cobrança ou atualização de status necessária.', 'info');
     }
   };
+
+  const getSystemNotifications = (): { title: string, message: string }[] => {
+    const notifications: { title: string, message: string }[] = [];
+    const notifiedPaymentIds = new Set<string>();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const checkAndAdd = (payment: Payment, title: string, message: string) => {
+        if (!notifiedPaymentIds.has(payment.id)) {
+            notifications.push({ title, message });
+            notifiedPaymentIds.add(payment.id);
+        }
+    }
+    
+    // Check based on billing ruler
+    if (billingRulerSettings.reminderBeforeDue.enabled) {
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() + billingRulerSettings.reminderBeforeDue.days);
+        payments.forEach(p => {
+            const dueDate = new Date(p.date);
+            if (p.status === PaymentStatus.Pending && dueDate.toDateString() === targetDate.toDateString()) {
+                const member = members.find(m => m.id === p.memberId);
+                checkAndAdd(p, 'Lembrete de Vencimento', `O pagamento de ${member?.name || 'um aluno'} vence em ${billingRulerSettings.reminderBeforeDue.days} dias.`);
+            }
+        });
+    }
+    
+    if (billingRulerSettings.reminderOnDue.enabled) {
+        payments.forEach(p => {
+            if (p.status === PaymentStatus.Pending && new Date(p.date).toDateString() === today.toDateString()) {
+                 const member = members.find(m => m.id === p.memberId);
+                checkAndAdd(p, 'Pagamento Vence Hoje', `O pagamento de ${member?.name || 'um aluno'} vence hoje.`);
+            }
+        });
+    }
+
+    if (billingRulerSettings.reminderAfterDue.enabled) {
+        const targetDate = new Date(today);
+        targetDate.setDate(today.getDate() - billingRulerSettings.reminderAfterDue.days);
+         payments.forEach(p => {
+            if (p.status === PaymentStatus.Overdue && new Date(p.date).toDateString() === targetDate.toDateString()) {
+                 const member = members.find(m => m.id === p.memberId);
+                checkAndAdd(p, 'Pagamento Atrasado', `O pagamento de ${member?.name || 'um aluno'} está atrasado há ${billingRulerSettings.reminderAfterDue.days} dias.`);
+            }
+        });
+    }
+    
+    return notifications;
+  };
+
 
   // --- CRUD Functions ---
   const updateCurrentMemberProfile = (data: { email?: string; telefone?: string }) => {
@@ -798,10 +851,11 @@ ${JSON.stringify(dataContext, null, 2)}
     addRole, updateRole, deleteRole,
     addUser, updateUser, deleteUser,
     importData,
-    manuallyTriggerBilling,
+    runAutomatedBillingCycle,
     getAIResponse,
     getDashboardInsights,
     getReportInsights,
+    getSystemNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

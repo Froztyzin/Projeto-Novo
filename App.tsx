@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
@@ -41,11 +41,16 @@ const viewTitles: Record<ViewType, string> = {
 };
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated, isAuthenticatedMember, isAuthLoading, members, plans, payments } = useAppContext();
-    const { unreadCount } = useNotifications();
+    const { 
+        isAuthenticated, isAuthenticatedMember, isAuthLoading, isLoading, 
+        members, plans, payments, 
+        getSystemNotifications, runAutomatedBillingCycle 
+    } = useAppContext();
+    const { unreadCount, addNotification } = useNotifications();
     const [view, setView] = useState<ViewType>('dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const automationRan = useRef(false);
     
     // Auth view state for member login/reset flow
     const [authView, setAuthView] = useState<AuthView>('combinedLogin');
@@ -65,6 +70,17 @@ const AppContent: React.FC = () => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
+
+    useEffect(() => {
+        if (isAuthenticated && !isLoading && !isAuthLoading && !automationRan.current) {
+            runAutomatedBillingCycle();
+            const notifications = getSystemNotifications();
+            notifications.forEach(n => {
+                addNotification(n.title, n.message);
+            });
+            automationRan.current = true;
+        }
+    }, [isAuthenticated, isLoading, isAuthLoading, runAutomatedBillingCycle, getSystemNotifications, addNotification]);
     
     const openMemberDetails = (member: Member) => {
         setSelectedMember(member);
@@ -92,7 +108,7 @@ const AppContent: React.FC = () => {
         }
     };
     
-    if (isAuthLoading) {
+    if (isAuthLoading || (isAuthenticated && isLoading)) {
         return (
             <div className="flex h-screen w-screen items-center justify-center bg-slate-950">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-500"></div>
