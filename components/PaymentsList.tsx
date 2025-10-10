@@ -9,6 +9,8 @@ import { PaymentStatus, Permission } from '../types';
 import { useAppContext } from '../contexts/AppContext';
 import { Skeleton } from './ui/Skeleton';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Pagination } from './ui/Pagination';
+import { Avatar } from './ui/Avatar';
 
 const PaymentsListSkeleton: React.FC = () => (
     <div className="space-y-6">
@@ -32,22 +34,6 @@ const PaymentsListSkeleton: React.FC = () => (
         </div>
     </div>
 );
-
-const Avatar: React.FC<{ name: string }> = ({ name }) => {
-    const getInitials = (nameStr: string) => {
-        if (!nameStr) return '..';
-        const names = nameStr.split(' ');
-        if (names.length > 1) {
-            return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-        }
-        return nameStr.substring(0, 2).toUpperCase();
-    };
-    return (
-        <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold text-sm mr-4 flex-shrink-0">
-            {getInitials(name)}
-        </div>
-    );
-};
 
 const SortIcon: React.FC<{ direction?: 'ascending' | 'descending' }> = ({ direction }) => {
   if (!direction) {
@@ -84,6 +70,8 @@ export const PaymentsList: React.FC = () => {
   
   const [filters, setFilters] = useState({ searchTerm: '', status: 'all', startDate: '', endDate: '' });
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const memberMap = useMemo(() => members.reduce((acc, member) => ({ ...acc, [member.id]: member }), {} as Record<string, Member>), [members]);
   const planMap = useMemo(() => plans.reduce((acc, plan) => ({ ...acc, [plan.id]: plan }), {} as Record<string, Plan>), [plans]);
@@ -119,6 +107,13 @@ export const PaymentsList: React.FC = () => {
     });
   }, [payments, filters, sortConfig, memberMap, planMap]);
   
+  const totalPages = Math.ceil(processedPayments.length / ITEMS_PER_PAGE);
+  const currentPayments = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return processedPayments.slice(start, end);
+  }, [processedPayments, currentPage]);
+
   const kpiData = useMemo(() => {
     return processedPayments.reduce((acc, p) => {
         if(p.status === PaymentStatus.Paid) {
@@ -168,9 +163,11 @@ export const PaymentsList: React.FC = () => {
   };
   
   const renderSortableHeader = (label: string, key: SortableKeys) => (
-    <th className="p-4 font-semibold cursor-pointer" onClick={() => requestSort(key)}>
-      {label}
-      <SortIcon direction={sortConfig.key === key ? sortConfig.direction : undefined} />
+    <th className="p-4 font-semibold">
+        <button className="flex items-center w-full text-left uppercase text-sm text-gray-600 dark:text-gray-300" onClick={() => requestSort(key)}>
+            {label}
+            <SortIcon direction={sortConfig.key === key ? sortConfig.direction : undefined} />
+        </button>
     </th>
   );
 
@@ -215,18 +212,18 @@ export const PaymentsList: React.FC = () => {
         <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-600 dark:text-gray-300 uppercase">
+                <tr className="bg-gray-50 dark:bg-gray-700/50">
                   {renderSortableHeader('Aluno', 'memberName')}
                   {renderSortableHeader('Plano', 'planName')}
                   {renderSortableHeader('Valor', 'amount')}
                   {renderSortableHeader('Vencimento', 'date')}
-                  <th className="p-4 font-semibold">Pagamento</th>
+                  <th className="p-4 font-semibold uppercase text-sm text-gray-600 dark:text-gray-300">Pagamento</th>
                   {renderSortableHeader('Status', 'status')}
-                  <th className="p-4 font-semibold text-right">Ações</th>
+                  <th className="p-4 font-semibold uppercase text-sm text-gray-600 dark:text-gray-300 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {processedPayments.length > 0 ? processedPayments.map((p, index) => (
+                {currentPayments.length > 0 ? currentPayments.map((p, index) => (
                   <tr 
                     key={p.id} 
                     className="hover:bg-gray-50 dark:hover:bg-gray-700/50 animate-stagger" 
@@ -262,8 +259,8 @@ export const PaymentsList: React.FC = () => {
         
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4 p-4">
-            {processedPayments.length > 0 ? (
-                processedPayments.map((p, index) => (
+            {currentPayments.length > 0 ? (
+                currentPayments.map((p, index) => (
                     <div 
                         key={p.id} 
                         className="bg-slate-50 dark:bg-gray-900/40 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 animate-stagger"
@@ -313,6 +310,14 @@ export const PaymentsList: React.FC = () => {
         </div>
       </div>
       
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={processedPayments.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+      />
+
       {isModalOpen && <PaymentFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addPayment={addPayment} updatePayment={updatePayment} payment={editingPayment} members={members} plans={plans} />}
       {isConfirmModalOpen && <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={handleConfirmDelete} title="Confirmar Exclusão" message="Você tem certeza que deseja excluir este registro de pagamento? Esta ação não pode ser desfeita." />}
     </div>

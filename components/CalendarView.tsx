@@ -28,17 +28,17 @@ const CalendarSkeleton: React.FC = () => {
     );
 };
 
-const SummaryPaymentItem: React.FC<{ payment: Payment }> = ({ payment }) => {
+const SummaryPaymentItem: React.FC<{ payment: Payment; memberName: string }> = ({ payment, memberName }) => {
     const statusClasses = {
         [PaymentStatus.Paid]: 'bg-green-400',
         [PaymentStatus.Pending]: 'bg-yellow-400',
         [PaymentStatus.Overdue]: 'bg-red-400',
     };
     return (
-        <div className="flex items-center text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/60 mb-1">
+        <div className="flex items-center text-xs px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/60 mb-1" title={`${memberName} - ${payment.status}`}>
             <span className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${statusClasses[payment.status]}`} title={payment.status}></span>
-            <span className="font-semibold text-gray-700 dark:text-gray-200">
-                {payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            <span className="font-medium text-gray-700 dark:text-gray-200 truncate">
+                {memberName}
             </span>
         </div>
     );
@@ -49,6 +49,13 @@ export const CalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  const memberMap = useMemo(() => {
+    return members.reduce((acc, member) => {
+        acc[member.id] = member.name;
+        return acc;
+    }, {} as Record<string, string>);
+  }, [members]);
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -157,7 +164,7 @@ export const CalendarView: React.FC = () => {
                       </span>
                       <div className="mt-1 overflow-y-auto flex-1">
                         <>
-                            {dayPayments.slice(0, 3).map(p => <SummaryPaymentItem key={p.id} payment={p} />)}
+                            {dayPayments.slice(0, 3).map(p => <SummaryPaymentItem key={p.id} payment={p} memberName={memberMap[p.memberId] || 'Desconhecido'} />)}
                             {dayPayments.length > 3 && (
                                 <div className="text-xs text-center text-primary-600 dark:text-primary-400 font-semibold p-1 rounded-md bg-primary-50 dark:bg-primary-900/50 mt-1">
                                     + {dayPayments.length - 3} mais

@@ -3,6 +3,7 @@ import type { Payment, Member, Plan } from '../types';
 import { Modal } from './ui/Modal';
 import { PaymentStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
+import { Avatar } from './ui/Avatar';
 
 interface DayDetailsModalProps {
   isOpen: boolean;
@@ -28,11 +29,14 @@ export const DayDetailsModal: React.FC<DayDetailsModalProps> = ({ isOpen, onClos
           <div className="max-h-96 overflow-y-auto pr-2">
             <ul className="divide-y divide-gray-200 dark:divide-gray-700">
                 {payments.map(payment => (
-                <li key={payment.id} className="py-4 flex justify-between items-start">
-                    <div className="flex-1 pr-4">
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">{getMemberName(payment.memberId)}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{getPlanName(payment.planId)}</p>
-                      {payment.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">"{payment.description}"</p>}
+                <li key={payment.id} className="py-4 flex justify-between items-center">
+                    <div className="flex items-center flex-1 pr-4">
+                      <Avatar name={getMemberName(payment.memberId)} />
+                      <div>
+                        <p className="font-semibold text-gray-800 dark:text-gray-100">{getMemberName(payment.memberId)}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{getPlanName(payment.planId)}</p>
+                        {payment.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">"{payment.description}"</p>}
+                      </div>
                     </div>
                     <div className="text-right flex-shrink-0">
                       <p className="font-semibold text-green-600 dark:text-green-400">{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>

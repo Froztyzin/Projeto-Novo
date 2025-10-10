@@ -12,7 +12,7 @@ import { ExpensesList } from './components/ExpensesList';
 import { Reports } from './components/Reports';
 import { CalendarView } from './components/CalendarView';
 import { Settings } from './components/Settings';
-import { MenuIcon } from './components/ui/Icons';
+import { MenuIcon, ChevronRightIcon } from './components/ui/Icons';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { ToastContainer } from './components/ui/Toast';
@@ -134,7 +134,22 @@ const MainApplication: React.FC = () => {
           >
             <MenuIcon className="h-6 w-6" />
           </button>
-          <h1 className="text-2xl font-semibold">{viewTitles[view]}</h1>
+          <div className="flex items-center text-xl md:text-2xl font-semibold">
+            {view !== 'dashboard' ? (
+                <>
+                    <button 
+                        onClick={() => setView('dashboard')} 
+                        className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                    >
+                        Painel
+                    </button>
+                    <ChevronRightIcon className="h-5 w-5 mx-1 text-gray-400 dark:text-gray-500" />
+                    <h1 className="text-gray-800 dark:text-gray-200">{viewTitles[view]}</h1>
+                </>
+            ) : (
+                <h1 className="text-gray-800 dark:text-gray-200">{viewTitles[view]}</h1>
+            )}
+          </div>
            <button 
                 onClick={() => setIsPaletteOpen(true)}
                 className="hidden md:flex items-center text-sm text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
