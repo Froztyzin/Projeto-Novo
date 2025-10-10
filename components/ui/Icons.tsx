@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const createIconWithPaths = (paths: string[]) => (props: React.SVGProps<SVGSVGElement>) => (
@@ -33,6 +32,7 @@ export const Loader2Icon = createIcon("M21 12a9 9 0 1 1-6.219-8.56");
 export const CheckCircleIcon = createIconWithPaths(["M22 11.08V12a10 10 0 1 1-5.93-9.14", "M22 4L12 14.01l-3-3"]);
 export const SparklesIcon = createIconWithPaths(["M9.91 4.09l.49 1.94", "M3.49 10.49l1.94.49", "M18.06 19.91l-1.94-.49", "m1.41-1.41-1.94-.49", "M4.09 9.91l1.94-.49", "M19.91 18.06l-.49-1.94", "m-14.14 0 .49-1.94", "M12 2v2", "M12 20v2", "M2 12h2", "M20 12h2", "M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"]);
 export const SendIcon = createIconWithPaths(["m22 2-7 20-4-9-9-4 20-7z"]);
+export const HeartIcon = createIcon("M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z");
 export const ExclamationCircleIcon = createIconWithPaths(["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 8v4", "M12 16h.01"]);
 export const InfoCircleIcon = createIconWithPaths(["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 8v4", "M12 16h.01"]);
 export const MenuIcon = createIconWithPaths(["M3 12h18", "M3 6h18", "M3 18h18"]);

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
 import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
 import { useToast } from './ToastContext';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import { generateColorPalette } from '../utils';
 
 // --- Initial Data Setup ---
@@ -146,6 +146,9 @@ interface AppContextType {
   getAIResponse: (prompt: string) => Promise<string>;
   getDashboardInsights: (periodData: any) => Promise<string>;
   getReportInsights: (reportData: any) => Promise<string>;
+  getMemberInsights: (member: Member, memberPayments: Payment[], memberPlan: Plan | null) => Promise<{ risk: 'Alto' | 'Médio' | 'Baixo', analysis: string }>;
+  generatePaymentReminderMessage: (payment: Payment, member: Member) => Promise<string>;
+  generateReengagementMessage: (member: Member, plan: Plan | null) => Promise<string>;
   getSystemNotifications: () => { title: string, message: string }[];
 }
 
@@ -525,6 +528,165 @@ ${JSON.stringify(dataContext, null, 2)}
       return "Não foi possível gerar a análise no momento. Tente novamente mais tarde.";
     }
   };
+  
+  const getMemberInsights = async (member: Member, memberPayments: Payment[], memberPlan: Plan | null): Promise<{ risk: 'Alto' | 'Médio' | 'Baixo', analysis: string }> => {
+    try {
+        if (!process.env.API_KEY) {
+            return { risk: 'Médio', analysis: "A chave da API do Gemini não foi configurada para gerar insights." };
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        const dataContext = {
+            aluno: member,
+            plano_atual: memberPlan,
+            historico_pagamentos: memberPayments,
+            data_atual: new Date().toISOString(),
+        };
+
+        const systemInstruction = `Você é um especialista em retenção de clientes para academias. Analise os dados do aluno fornecido para prever o risco de evasão (churn).
+        Considere fatores como: status do aluno, tempo de matrícula, histórico de pagamentos (atrasos, pagamentos em dia), e tipo de plano.
+        
+        Responda **exclusivamente** com um objeto JSON. Não inclua texto ou formatação fora do JSON.
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Analise os seguintes dados e retorne o risco de evasão e uma breve análise: ${JSON.stringify(dataContext)}`,
+            config: {
+                systemInstruction: systemInstruction,
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        risk: {
+                            type: Type.STRING,
+                            enum: ['Alto', 'Médio', 'Baixo'],
+                            description: 'O nível de risco de evasão.'
+                        },
+                        analysis: {
+                            type: Type.STRING,
+                            description: 'Uma análise concisa de 1-2 frases explicando o porquê do nível de risco.'
+                        }
+                    }
+                }
+            }
+        });
+        
+        const jsonText = response.text.trim();
+        return JSON.parse(jsonText) as { risk: 'Alto' | 'Médio' | 'Baixo', analysis: string };
+
+    } catch (error) {
+        console.error("Erro ao gerar insights do aluno:", error);
+        addToast('Ocorreu um erro ao gerar a análise de risco.', 'error');
+        return { risk: 'Médio', analysis: 'Não foi possível gerar a análise no momento devido a um erro.' };
+    }
+  };
+
+  const generatePaymentReminderMessage = async (payment: Payment, member: Member): Promise<string> => {
+     try {
+        if (!process.env.API_KEY) {
+            return "A chave da API do Gemini não foi configurada para gerar a mensagem.";
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        const memberPaymentHistory = payments.filter(p => p.memberId === member.id);
+
+        const dataContext = {
+            aluno: {
+                nome: member.name,
+                email: member.email,
+                tempo_de_casa: new Date(member.joinDate).toLocaleDateString('pt-BR'),
+            },
+            pagamento_vencido: {
+                valor: payment.amount,
+                data_vencimento: new Date(payment.date).toLocaleDateString('pt-BR'),
+                descricao: payment.description
+            },
+            historico_de_pagamentos: memberPaymentHistory.map(p => ({ status: p.status, data_vencimento: new Date(p.date).toLocaleDateString('pt-BR') }))
+        };
+
+        const systemInstruction = `Você é um assistente de cobrança amigável e profissional para uma academia chamada "Ellite Corpus". Sua tarefa é gerar uma mensagem de cobrança curta e personalizada para ser enviada via WhatsApp.
+
+        **REGRAS:**
+        1.  **Tom Adaptável:** Analise o histórico de pagamentos do aluno.
+            *   Se for o **primeiro atraso** ou se os atrasos forem raros, use um tom muito amigável e compreensivo, sugerindo que pode ter sido um esquecimento.
+            *   Se houver um **histórico de atrasos**, seja um pouco mais direto, mas ainda educado e profissional, mencionando a importância de manter os pagamentos em dia.
+        2.  **Personalização:** Sempre comece a mensagem se dirigindo ao aluno pelo **primeiro nome**.
+        3.  **Clareza:** Informe claramente o **valor** do pagamento e a **data de vencimento**.
+        4.  **Formato:** Mantenha a mensagem curta e ideal para WhatsApp. Use quebras de linha para facilitar a leitura. Use emojis de forma sutil e profissional.
+        5.  **Finalização:** Termine com uma saudação cordial e se identifique como "da equipe Ellite Corpus".
+        6.  **Idioma:** Responda sempre em português do Brasil.
+        7.  **Não invente informações:** Baseie-se estritamente nos dados fornecidos.
+
+        // DADOS PARA ANÁLISE (em formato JSON)
+        ${JSON.stringify(dataContext, null, 2)}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: "Gere a mensagem de cobrança para o aluno com base nos dados fornecidos.",
+            config: {
+                systemInstruction: systemInstruction,
+            }
+        });
+        
+        return response.text;
+
+    } catch (error) {
+        console.error("Erro ao gerar mensagem de cobrança:", error);
+        addToast('Ocorreu um erro ao gerar a mensagem de cobrança.', 'error');
+        return "Não foi possível gerar a mensagem no momento. Tente novamente mais tarde.";
+    }
+  };
+
+  const generateReengagementMessage = async (member: Member, plan: Plan | null): Promise<string> => {
+     try {
+        if (!process.env.API_KEY) {
+            return "A chave da API do Gemini não foi configurada para gerar a mensagem.";
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+        const dataContext = {
+            aluno: {
+                nome: member.name,
+                status: member.status,
+                ultimo_plano: plan?.name || 'Não especificado',
+                tempo_de_casa: new Date(member.joinDate).toLocaleDateString('pt-BR'),
+            },
+        };
+
+        const systemInstruction = `Você é um especialista em retenção de clientes da academia "Ellite Corpus". Sua tarefa é gerar uma mensagem de reengajamento calorosa e personalizada para um aluno inativo, para ser enviada via WhatsApp.
+
+        **REGRAS:**
+        1.  **Tom Convidativo:** Use um tom amigável, pessoal e que demonstre que a academia sente falta do aluno.
+        2.  **Personalização:** Comece a mensagem se dirigindo ao aluno pelo **primeiro nome**. Mencione o fato de que sentem a falta dele(a) na academia.
+        3.  **Reconhecimento:** Se possível, mencione o último plano que ele(a) tinha para mostrar que você se lembra dele(a).
+        4.  **Chamada para Ação (CTA):** A mensagem deve ter um CTA claro, convidando o aluno a responder ou a visitar a academia para conhecer as novidades. Pode sugerir uma oferta especial de retorno, mas sem detalhar valores.
+        5.  **Formato:** Mantenha a mensagem curta, positiva e ideal para WhatsApp. Use emojis de forma sutil para transmitir um sentimento amigável (ex: 💪, 👋).
+        6.  **Finalização:** Termine com uma saudação entusiasmada e se identifique como "da equipe Ellite Corpus".
+        7.  **Idioma:** Responda sempre em português do Brasil.
+        8.  **Não invente informações:** Baseie-se estritamente nos dados fornecidos.
+
+        // DADOS DO ALUNO (em formato JSON)
+        ${JSON.stringify(dataContext, null, 2)}
+        `;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: "Gere a mensagem de reengajamento para o aluno inativo com base nos dados fornecidos.",
+            config: {
+                systemInstruction: systemInstruction,
+            }
+        });
+        
+        return response.text;
+
+    } catch (error) {
+        console.error("Erro ao gerar mensagem de reengajamento:", error);
+        addToast('Ocorreu um erro ao gerar a mensagem de reengajamento.', 'error');
+        return "Não foi possível gerar a mensagem no momento. Tente novamente mais tarde.";
+    }
+  };
 
   // --- Billing Automation ---
   const runAutomatedBillingCycle = () => {
@@ -855,6 +1017,9 @@ ${JSON.stringify(dataContext, null, 2)}
     getAIResponse,
     getDashboardInsights,
     getReportInsights,
+    getMemberInsights,
+    generatePaymentReminderMessage,
+    generateReengagementMessage,
     getSystemNotifications,
   };
 

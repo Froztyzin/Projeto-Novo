@@ -1,16 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import type { Payment, Member, Plan } from '../types';
 import { Button } from './ui/Button';
-import { PlusCircleIcon, EditIcon, TrashIcon, CreditCardIcon, DollarSignIcon, AlertTriangleIcon, CheckCircleIcon } from './ui/Icons';
+import { PlusCircleIcon, EditIcon, TrashIcon, CreditCardIcon, DollarSignIcon, AlertTriangleIcon, CheckCircleIcon, SparklesIcon } from './ui/Icons';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { PaymentStatusBadge } from './ui/Badges';
 import { PaymentFormModal } from './PaymentFormModal';
 import { PaymentStatus, Permission } from '../types';
 import { useAppContext } from '../contexts/AppContext';
 import { Skeleton } from './ui/Skeleton';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Card, CardContent } from './ui/Card';
 import { Pagination } from './ui/Pagination';
 import { Avatar } from './ui/Avatar';
+import { AIReminderModal } from './AIReminderModal';
 
 const PaymentsListSkeleton: React.FC = () => (
     <div className="space-y-6">
@@ -67,6 +68,7 @@ export const PaymentsList: React.FC = () => {
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
+  const [reminderModalData, setReminderModalData] = useState<{ payment: Payment, member: Member } | null>(null);
   
   const [filters, setFilters] = useState({ searchTerm: '', status: 'all', startDate: '', endDate: '' });
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
@@ -245,6 +247,11 @@ export const PaymentsList: React.FC = () => {
                     <td className="p-4"><PaymentStatusBadge status={p.status} /></td>
                     <td className="p-4 text-right">
                         <div className="flex items-center justify-end space-x-1">
+                          {p.status === PaymentStatus.Overdue && hasPermission(Permission.UPDATE_PAYMENTS) && (
+                              <Button variant="ghost" size="icon" title="Gerar lembrete com IA" onClick={() => setReminderModalData({ payment: p, member: memberMap[p.memberId] })}>
+                                  <SparklesIcon className="w-5 h-5 text-purple-400" />
+                              </Button>
+                          )}
                           {hasPermission(Permission.UPDATE_PAYMENTS) && <Button variant="ghost" size="icon" onClick={() => handleEdit(p)}><EditIcon className="w-5 h-5" /></Button>}
                           {hasPermission(Permission.DELETE_PAYMENTS) && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRequest(p.id)}><TrashIcon className="w-5 h-5" /></Button>}
                         </div>
@@ -297,6 +304,11 @@ export const PaymentsList: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-end space-x-1">
+                            {p.status === PaymentStatus.Overdue && hasPermission(Permission.UPDATE_PAYMENTS) && (
+                                <Button variant="ghost" size="icon" title="Gerar lembrete com IA" onClick={() => setReminderModalData({ payment: p, member: memberMap[p.memberId] })}>
+                                    <SparklesIcon className="w-5 h-5 text-purple-400" />
+                                </Button>
+                            )}
                             {hasPermission(Permission.UPDATE_PAYMENTS) && <Button variant="ghost" size="icon" onClick={() => handleEdit(p)}><EditIcon className="w-5 h-5" /></Button>}
                             {hasPermission(Permission.DELETE_PAYMENTS) && <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRequest(p.id)}><TrashIcon className="w-5 h-5" /></Button>}
                         </div>
@@ -320,6 +332,14 @@ export const PaymentsList: React.FC = () => {
 
       {isModalOpen && <PaymentFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addPayment={addPayment} updatePayment={updatePayment} payment={editingPayment} members={members} plans={plans} />}
       {isConfirmModalOpen && <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={handleConfirmDelete} title="Confirmar Exclusão" message="Você tem certeza que deseja excluir este registro de pagamento? Esta ação não pode ser desfeita." />}
+      {reminderModalData && (
+        <AIReminderModal
+            isOpen={!!reminderModalData}
+            onClose={() => setReminderModalData(null)}
+            payment={reminderModalData.payment}
+            member={reminderModalData.member}
+        />
+      )}
     </div>
   );
 };

@@ -1,16 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../contexts/AppContext';
-import type { Member, Plan } from '../types';
+import type { Member, Plan, Payment } from '../types';
 import { MemberStatus, Permission } from '../types';
 import { MemberStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
-import { PlusCircleIcon, UsersIcon, EditIcon, TrashIcon, MailIcon } from './ui/Icons';
+import { PlusCircleIcon, UsersIcon, EditIcon, TrashIcon, MailIcon, HeartIcon } from './ui/Icons';
 import { MemberFormModal } from './MemberFormModal';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { Skeleton } from './ui/Skeleton';
 import { Pagination } from './ui/Pagination';
 import { Avatar } from './ui/Avatar';
 import { useToast } from '../contexts/ToastContext';
+import { AIReengagementModal } from './AIReengagementModal';
 
 interface MembersListProps {
   openMemberDetails: (member: Member) => void;
@@ -62,6 +63,7 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
     
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
+  const [reengagementModalData, setReengagementModalData] = useState<{ member: Member, plan: Plan | null } | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -122,6 +124,11 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
   const handleSendResetLink = async (email: string) => {
     const result = await requestPasswordResetForMember(email);
     addToast(result.message, result.success ? 'success' : 'error');
+  };
+
+  const handleReengagementClick = (member: Member) => {
+    const memberPlan = plans.find(p => p.id === member.planId) || null;
+    setReengagementModalData({ member, plan: memberPlan });
   };
 
   const clearFilters = () => {
@@ -214,6 +221,11 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                         <td className="p-4"><MemberStatusBadge status={member.status} /></td>
                         <td className="p-4">
                         <div className="flex items-center justify-end space-x-1" onClick={e => e.stopPropagation()}>
+                            {member.status === MemberStatus.Inactive && hasPermission(Permission.UPDATE_MEMBERS) && (
+                                <Button variant="ghost" size="icon" title="Gerar mensagem de reengajamento" onClick={() => handleReengagementClick(member)}>
+                                    <HeartIcon className="w-5 h-5 text-pink-400" />
+                                </Button>
+                            )}
                             <Button variant="ghost" size="icon" title="Enviar link para definir senha" onClick={() => handleSendResetLink(member.email)}>
                                 <MailIcon className="w-5 h-5" />
                             </Button>
@@ -277,6 +289,11 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                             </div>
 
                             <div className="flex items-center justify-end space-x-1 mt-4" onClick={e => e.stopPropagation()}>
+                                {member.status === MemberStatus.Inactive && hasPermission(Permission.UPDATE_MEMBERS) && (
+                                    <Button variant="ghost" size="icon" title="Gerar mensagem de reengajamento" onClick={() => handleReengagementClick(member)}>
+                                        <HeartIcon className="w-5 h-5 text-pink-400" />
+                                    </Button>
+                                )}
                                 <Button variant="ghost" size="icon" title="Enviar link para definir senha" onClick={() => handleSendResetLink(member.email)}>
                                     <MailIcon className="w-5 h-5" />
                                 </Button>
@@ -328,6 +345,15 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
             title="Confirmar Exclusão de Aluno"
             message="Você tem certeza que deseja excluir este aluno? Esta ação não pode ser desfeita."
           />
+      )}
+
+      {reengagementModalData && (
+        <AIReengagementModal
+            isOpen={!!reengagementModalData}
+            onClose={() => setReengagementModalData(null)}
+            member={reengagementModalData.member}
+            plan={reengagementModalData.plan}
+        />
       )}
     </div>
   );
