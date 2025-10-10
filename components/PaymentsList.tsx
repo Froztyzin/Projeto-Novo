@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { Payment, Member, Plan } from '../types';
 import { Button } from './ui/Button';
@@ -176,15 +175,14 @@ export const PaymentsList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Controle de Pagamentos</h2>
-        {hasPermission(Permission.CREATE_PAYMENTS) && (
+      {hasPermission(Permission.CREATE_PAYMENTS) && (
+          <div className="flex justify-end">
             <Button onClick={handleAddNew}>
               <PlusCircleIcon className="w-5 h-5 mr-2" />
               Registrar Pagamento
             </Button>
-        )}
-      </div>
+          </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, index) => (

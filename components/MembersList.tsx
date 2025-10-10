@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import type { Member, Plan } from '../types';
@@ -139,15 +137,14 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4 sm:mb-0">Gerenciamento de Alunos</h2>
-            {hasPermission(Permission.CREATE_MEMBERS) && (
+        {hasPermission(Permission.CREATE_MEMBERS) && (
+            <div className="flex justify-end">
                 <Button onClick={handleAddNew} className="flex items-center justify-center">
                     <PlusCircleIcon className="w-5 h-5 mr-2" />
                     Adicionar Aluno
                 </Button>
-            )}
-        </div>
+            </div>
+        )}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat, index) => (

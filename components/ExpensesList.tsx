@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo } from 'react';
 import type { Expense } from '../types';
 import { Button } from './ui/Button';
@@ -120,8 +118,7 @@ export const ExpensesList: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Despesas</h2>
+        <div className="flex flex-col sm:flex-row justify-end items-center mb-6 gap-4">
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
             <input
               type="text"

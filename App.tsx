@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { NotificationProvider, useNotifications } from './contexts/NotificationContext';
 import { ToastContainer } from './components/ui/Toast';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -19,17 +19,33 @@ import { AIAssistant } from './components/AIAssistant';
 import { CommandPalette } from './components/CommandPalette';
 import { BottomNavBar } from './components/BottomNavBar';
 import ErrorBoundary from './components/ErrorBoundary';
-import { MenuIcon } from './components/ui/Icons';
+import { MenuIcon, BellIcon } from './components/ui/Icons';
 import type { ViewType, Member, Plan, Payment, AuthView } from './types';
 import { CombinedLoginPage } from './components/CombinedLoginPage';
 import { RequestPasswordResetPage } from './components/RequestPasswordResetPage';
 import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { MemberPortal } from './components/MemberPortal';
+import { NotificationsPanel } from './components/NotificationsPanel';
+
+const viewTitles: Record<ViewType, string> = {
+    dashboard: 'Painel',
+    members: 'Gerenciamento de Alunos',
+    plans: 'Planos de Matrícula',
+    payments: 'Controle de Pagamentos',
+    expenses: 'Despesas',
+    users: 'Gerenciamento de Usuários',
+    reports: 'Relatórios de Pagamentos',
+    calendar: 'Calendário de Pagamentos',
+    settings: 'Configurações',
+    'audit-log': 'Registro de Atividades',
+};
 
 const AppContent: React.FC = () => {
-    const { isAuthenticated, isAuthenticatedMember, isAuthLoading, members, plans, payments, logo } = useAppContext();
+    const { isAuthenticated, isAuthenticatedMember, isAuthLoading, members, plans, payments } = useAppContext();
+    const { unreadCount } = useNotifications();
     const [view, setView] = useState<ViewType>('dashboard');
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     
     // Auth view state for member login/reset flow
     const [authView, setAuthView] = useState<AuthView>('combinedLogin');
@@ -107,17 +123,26 @@ const AppContent: React.FC = () => {
         <div className="flex h-screen bg-slate-950 text-slate-100 font-sans">
             <Sidebar currentView={view} setView={setView} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
             <main className="flex-1 flex flex-col overflow-hidden">
-                 <header className="lg:hidden flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shadow-md">
-                     <div className="flex items-center space-x-2">
-                        {logo ? (
-                          <img src={logo} alt="Logo" className="max-h-8 w-auto" />
-                        ) : (
-                          <h1 className="text-xl font-bold">Elite Corpus</h1>
-                        )}
+                <header className="flex justify-between items-center p-4 bg-slate-900 border-b border-slate-800 shadow-md flex-shrink-0">
+                    {/* Left side */}
+                    <div className="flex items-center">
+                        <button onClick={() => setSidebarOpen(true)} className="text-slate-400 lg:hidden mr-4">
+                            <MenuIcon className="h-6 w-6" />
+                        </button>
+                        <h1 className="text-xl font-bold text-slate-100">{viewTitles[view]}</h1>
                     </div>
-                    <button onClick={() => setSidebarOpen(true)} className="text-slate-400">
-                        <MenuIcon className="h-6 w-6" />
-                    </button>
+
+                    {/* Right side: Notifications */}
+                    <div className="relative">
+                        <button onClick={() => setIsNotificationsOpen(true)} className="text-slate-400 relative hover:text-white transition-colors p-2 rounded-full hover:bg-slate-800">
+                            <BellIcon className="h-6 w-6" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white ring-2 ring-slate-900">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </header>
                 <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-950/70">
                     {renderView()}
@@ -143,6 +168,7 @@ const AppContent: React.FC = () => {
                     plans={plans}
                 />
             )}
+            <NotificationsPanel isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
             <BottomNavBar currentView={view} setView={setView} />
         </div>
     );
@@ -153,8 +179,10 @@ const App: React.FC = () => {
         <ErrorBoundary>
             <ToastProvider>
                 <AppProvider>
-                    <AppContent />
-                    <ToastContainer />
+                    <NotificationProvider>
+                        <AppContent />
+                        <ToastContainer />
+                    </NotificationProvider>
                 </AppProvider>
             </ToastProvider>
         </ErrorBoundary>

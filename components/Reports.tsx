@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { Payment } from '../types';
@@ -8,6 +7,7 @@ import { PaymentStatusBadge } from './ui/Badges';
 import { useAppContext } from '../contexts/AppContext';
 import { Skeleton } from './ui/Skeleton';
 import { AIInsightCard, AIInsightCardSkeleton } from './AIInsightCard';
+import { Pagination } from './ui/Pagination';
 
 const ReportsSkeleton: React.FC = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-8">
@@ -55,6 +55,8 @@ export const Reports: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [insight, setInsight] = useState('');
   const [isInsightLoading, setIsInsightLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const getMemberName = (memberId: string) => members.find(m => m.id === memberId)?.name || 'Desconhecido';
   const getPlanName = (planId: string) => plans.find(p => p.id === planId)?.name || 'N/A';
@@ -83,6 +85,17 @@ export const Reports: React.FC = () => {
       return statusMatch && startDateMatch && endDateMatch;
     });
   }, [payments, statusFilter, startDate, endDate]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [statusFilter, startDate, endDate]);
+    
+    const totalPages = Math.ceil(filteredPayments.length / ITEMS_PER_PAGE);
+    const currentPayments = useMemo(() => {
+        const start = (currentPage - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        return filteredPayments.slice(start, end);
+    }, [filteredPayments, currentPage]);
 
   const monthlyRevenueData = useMemo(() => {
     const revenueByMonth: { [key: string]: { revenue: number, date: Date } } = {};
@@ -186,8 +199,6 @@ export const Reports: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-8">
-      <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Relatórios de Pagamentos</h2>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
         <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
@@ -271,7 +282,7 @@ export const Reports: React.FC = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filteredPayments.length > 0 ? filteredPayments.map((payment, index) => (
+            {currentPayments.length > 0 ? currentPayments.map((payment, index) => (
               <tr 
                 key={payment.id} 
                 className="hover:bg-gray-50 dark:hover:bg-gray-700/50 animate-stagger"
@@ -293,6 +304,13 @@ export const Reports: React.FC = () => {
           </tbody>
         </table>
       </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={filteredPayments.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+       />
     </div>
   );
 };
