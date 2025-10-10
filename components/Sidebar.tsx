@@ -1,7 +1,9 @@
+
+
 import React from 'react';
 import type { ViewType } from '../types';
 import { Permission } from '../types';
-import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon } from './ui/Icons';
+import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon } from './ui/Icons';
 import { useAppContext } from '../contexts/AppContext';
 
 interface SidebarProps {
@@ -53,6 +55,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
     { view: 'expenses', label: 'Despesas', icon: <ReceiptIcon className="h-6 w-6" />, permissions: [Permission.VIEW_EXPENSES] },
     { view: 'reports', label: 'Relatórios', icon: <BarChartIcon className="h-6 w-6" />, permissions: [Permission.VIEW_REPORTS] },
     { view: 'calendar', label: 'Calendário', icon: <CalendarIcon className="h-6 w-6" />, permissions: [Permission.VIEW_CALENDAR] },
+    { view: 'users', label: 'Usuários', icon: <UserCogIcon className="h-6 w-6" />, permissions: [Permission.VIEW_USERS] },
+    { view: 'audit-log', label: 'Registro de Atividades', icon: <HistoryIcon className="h-6 w-6" />, permissions: [Permission.VIEW_AUDIT_LOG] },
     { view: 'settings', label: 'Configurações', icon: <SettingsIcon className="h-6 w-6" />, permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
   ];
     

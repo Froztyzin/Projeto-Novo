@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useAppContext } from '../contexts/AppContext';
+import { useAppContext, BillingRulerSettings } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui/Button';
 import { ConfirmationModal } from './ui/ConfirmationModal';
-import { RoleFormModal } from './RoleFormModal';
-import { Permission, Role } from '../types';
-import { PlusCircleIcon, ShieldCheckIcon, EditIcon, TrashIcon, SparklesIcon } from './ui/Icons';
+import { Permission } from '../types';
 import { Skeleton } from './ui/Skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
 
@@ -66,8 +64,9 @@ const InfoItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, 
 
 export const Settings: React.FC = () => {
     const { 
-        importData, roles, currentUser, addRole, updateRole, deleteRole, hasPermission, isLoading,
-        logo: contextLogo, primaryColor: contextPrimaryColor, updateLogo, updatePrimaryColor
+        importData, roles, currentUser, hasPermission, isLoading,
+        logo: contextLogo, primaryColor: contextPrimaryColor, billingRulerSettings: contextBillingSettings,
+        updateLogo, updatePrimaryColor, updateBillingRulerSettings
     } = useAppContext();
     const { addToast } = useToast();
 
@@ -77,85 +76,101 @@ export const Settings: React.FC = () => {
     const [currency, setCurrency] = useState('BRL');
     const [logo, setLogo] = useState<string | null>(null);
     const [primaryColor, setPrimaryColor] = useState('#22c55e');
+    const [billingSettings, setBillingSettings] = useState<BillingRulerSettings>(contextBillingSettings);
 
     // Initial state to track changes
-    const [initialIsDarkTheme, setInitialIsDarkTheme] = useState(false);
-    const [initialGymName, setInitialGymName] = useState('Ellite Corpus');
-    const [initialCurrency, setInitialCurrency] = useState('BRL');
-    const [initialLogo, setInitialLogo] = useState<string | null>(null);
-    const [initialPrimaryColor, setInitialPrimaryColor] = useState('#22c55e');
+    const [initialState, setInitialState] = useState({
+        isDarkTheme: false,
+        gymName: 'Ellite Corpus',
+        currency: 'BRL',
+        logo: null as string | null,
+        primaryColor: '#22c55e',
+        billingSettings: contextBillingSettings,
+    });
 
-    const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
-    const [dataToImport, setDataToImport] = useState<any | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
-
-    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-    const [editingRole, setEditingRole] = useState<Role | null>(null);
-    const [isDeleteRoleConfirmOpen, setIsDeleteRoleConfirmOpen] = useState(false);
-    const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+    const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+    const [dataToImport, setDataToImport] = useState<any | null>(null);
 
     useEffect(() => {
         const loadedTheme = localStorage.getItem('theme') === 'dark';
-        setIsDarkTheme(loadedTheme);
-        setInitialIsDarkTheme(loadedTheme);
-
         const loadedGymName = localStorage.getItem('gymName') || 'Ellite Corpus';
-        setGymName(loadedGymName);
-        setInitialGymName(loadedGymName);
-        
         const loadedCurrency = localStorage.getItem('currency') || 'BRL';
+        
+        setIsDarkTheme(loadedTheme);
+        setGymName(loadedGymName);
         setCurrency(loadedCurrency);
-        setInitialCurrency(loadedCurrency);
-    }, []);
-
-    useEffect(() => {
         setLogo(contextLogo);
-        setInitialLogo(contextLogo);
         setPrimaryColor(contextPrimaryColor);
-        setInitialPrimaryColor(contextPrimaryColor);
-    }, [contextLogo, contextPrimaryColor]);
+        setBillingSettings(contextBillingSettings);
+
+        setInitialState({
+            isDarkTheme: loadedTheme,
+            gymName: loadedGymName,
+            currency: loadedCurrency,
+            logo: contextLogo,
+            primaryColor: contextPrimaryColor,
+            billingSettings: contextBillingSettings
+        });
+    }, [contextLogo, contextPrimaryColor, contextBillingSettings]);
     
     const isDirty = useMemo(() => {
-        return isDarkTheme !== initialIsDarkTheme ||
-               gymName !== initialGymName ||
-               currency !== initialCurrency ||
-               logo !== initialLogo ||
-               primaryColor !== initialPrimaryColor;
-    }, [isDarkTheme, gymName, currency, logo, primaryColor, initialIsDarkTheme, initialGymName, initialCurrency, initialLogo, initialPrimaryColor]);
+        return isDarkTheme !== initialState.isDarkTheme ||
+               gymName !== initialState.gymName ||
+               currency !== initialState.currency ||
+               logo !== initialState.logo ||
+               primaryColor !== initialState.primaryColor ||
+               JSON.stringify(billingSettings) !== JSON.stringify(initialState.billingSettings);
+    }, [isDarkTheme, gymName, currency, logo, primaryColor, billingSettings, initialState]);
 
     const handleSaveSettings = () => {
+        // Theme
         localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
         if (isDarkTheme) {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
-        setInitialIsDarkTheme(isDarkTheme);
 
+        // General
         localStorage.setItem('gymName', gymName);
-        setInitialGymName(gymName);
-
         localStorage.setItem('currency', currency);
-        setInitialCurrency(currency);
 
+        // Customization
         updatePrimaryColor(primaryColor);
-        setInitialPrimaryColor(primaryColor);
+        if (logo !== initialState.logo) updateLogo(logo);
 
-        if (logo !== initialLogo) {
-          updateLogo(logo);
-          setInitialLogo(logo);
-        }
+        // Billing Ruler
+        updateBillingRulerSettings(billingSettings);
+        
+        // Update initial state to remove dirty flag
+        setInitialState({
+            isDarkTheme,
+            gymName,
+            currency,
+            logo,
+            primaryColor,
+            billingSettings
+        });
         
         addToast('Configurações salvas com sucesso!', 'success');
     };
 
     const handleResetChanges = () => {
-        setIsDarkTheme(initialIsDarkTheme);
-        setGymName(initialGymName);
-        setCurrency(initialCurrency);
-        setLogo(initialLogo);
-        setPrimaryColor(initialPrimaryColor);
+        setIsDarkTheme(initialState.isDarkTheme);
+        setGymName(initialState.gymName);
+        setCurrency(initialState.currency);
+        setLogo(initialState.logo);
+        setPrimaryColor(initialState.primaryColor);
+        setBillingSettings(initialState.billingSettings);
+    };
+    
+    const handleBillingChange = (key: keyof BillingRulerSettings) => {
+        setBillingSettings(prev => ({
+            ...prev,
+            [key]: { ...prev[key], enabled: !prev[key].enabled }
+        }));
     };
 
     const handleExportData = () => {
@@ -211,29 +226,6 @@ export const Settings: React.FC = () => {
         } else if (file) {
             addToast('Por favor, selecione um arquivo de imagem válido.', 'error');
         }
-    };
-
-    const handleAddNewRole = () => {
-        setEditingRole(null);
-        setIsRoleModalOpen(true);
-    };
-
-    const handleEditRole = (role: Role) => {
-        setEditingRole(role);
-        setIsRoleModalOpen(true);
-    };
-
-    const handleDeleteRoleRequest = (role: Role) => {
-        setRoleToDelete(role);
-        setIsDeleteRoleConfirmOpen(true);
-    };
-
-    const handleConfirmDeleteRole = () => {
-        if (roleToDelete) {
-            deleteRole(roleToDelete.id);
-        }
-        setIsDeleteRoleConfirmOpen(false);
-        setRoleToDelete(null);
     };
 
     if (isLoading) {
@@ -315,64 +307,28 @@ export const Settings: React.FC = () => {
                     </CardContent>
                 </Card>
 
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Régua de Cobrança</CardTitle>
+                        <CardDescription>Configure lembretes automáticos para pagamentos.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <div className="space-y-4">
+                            <ToggleSwitch id="reminderBeforeDue" label={`Lembrete (${billingSettings.reminderBeforeDue.days} dias antes do venc.)`} checked={billingSettings.reminderBeforeDue.enabled} onChange={() => handleBillingChange('reminderBeforeDue')} />
+                            <ToggleSwitch id="reminderOnDue" label="Aviso (No dia do venc.)" checked={billingSettings.reminderOnDue.enabled} onChange={() => handleBillingChange('reminderOnDue')} />
+                            <ToggleSwitch id="reminderAfterDue" label={`Notificação de Atraso (${billingSettings.reminderAfterDue.days} dias após)`} checked={billingSettings.reminderAfterDue.enabled} onChange={() => handleBillingChange('reminderAfterDue')} />
+                        </div>
+                    </CardContent>
+                </Card>
+                
                 <div className="flex justify-end space-x-4">
                     <Button onClick={handleResetChanges} variant="outline" disabled={!isDirty}>Cancelar</Button>
                     <Button onClick={handleSaveSettings} disabled={!isDirty}>Salvar Alterações</Button>
                 </div>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Régua de Cobrança (Em Breve)</CardTitle>
-                        <CardDescription>Configure lembretes automáticos por e-mail ou WhatsApp para pagamentos.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <div className="space-y-4 opacity-50">
-                            <ToggleSwitch id="reminder1" label="Lembrete (3 dias antes do venc.)" checked={false} onChange={() => {}} disabled={true} />
-                            <ToggleSwitch id="reminder2" label="Aviso (No dia do venc.)" checked={false} onChange={() => {}} disabled={true} />
-                            <ToggleSwitch id="reminder3" label="Notificação de Atraso (5 dias após)" checked={false} onChange={() => {}} disabled={true} />
-                        </div>
-                    </CardContent>
-                </Card>
+
               </>
             )}
 
-            {hasPermission(Permission.MANAGE_ROLES) && (
-                <Card>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle>Gerenciamento de Funções</CardTitle>
-                          <CardDescription>Crie e edite funções para controlar o que cada usuário pode fazer.</CardDescription>
-                        </div>
-                        <Button onClick={handleAddNewRole} size="sm">
-                            <PlusCircleIcon className="w-5 h-5 mr-2" />
-                            Nova Função
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                          {roles.map(role => (
-                              <div key={role.id} className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-900/70 rounded-md">
-                                  <div>
-                                      <p className="font-semibold text-gray-800 dark:text-gray-100">{role.name}</p>
-                                      <p className="text-sm text-gray-500 dark:text-gray-400">{role.description}</p>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                      <Button variant="ghost" size="icon" onClick={() => handleEditRole(role)} disabled={role.isEditable === false}>
-                                          <EditIcon className="w-5 h-5" />
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRoleRequest(role)} disabled={role.isEditable === false}>
-                                          <TrashIcon className="w-5 h-5" />
-                                      </Button>
-                                  </div>
-                              </div>
-                          ))}
-                      </div>
-                    </CardContent>
-                </Card>
-            )}
-            
             <Card>
                 <CardHeader>
                     <CardTitle>Gerenciamento de Dados</CardTitle>
@@ -396,26 +352,6 @@ export const Settings: React.FC = () => {
                     message="A importação de dados substituirá TODOS os dados existentes. Esta ação não pode ser desfeita. Deseja continuar?"
                     confirmText="Sim, importar"
                     confirmButtonClass="bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500"
-                />
-            )}
-            
-            {isRoleModalOpen && (
-                <RoleFormModal 
-                    isOpen={isRoleModalOpen}
-                    onClose={() => setIsRoleModalOpen(false)}
-                    role={editingRole}
-                    addRole={addRole}
-                    updateRole={updateRole}
-                />
-            )}
-
-            {isDeleteRoleConfirmOpen && roleToDelete && (
-                 <ConfirmationModal
-                    isOpen={isDeleteRoleConfirmOpen}
-                    onClose={() => setIsDeleteRoleConfirmOpen(false)}
-                    onConfirm={handleConfirmDeleteRole}
-                    title={`Excluir Função "${roleToDelete.name}"`}
-                    message="Você tem certeza que deseja excluir esta função? Usuários associados a ela podem perder o acesso."
                 />
             )}
         </div>

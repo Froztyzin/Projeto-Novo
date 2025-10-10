@@ -1,5 +1,6 @@
 
 
+
 import React, { useState, useEffect } from 'react';
 import type { ViewType, Member } from './types';
 import { Permission } from './types';
@@ -12,6 +13,8 @@ import { ExpensesList } from './components/ExpensesList';
 import { Reports } from './components/Reports';
 import { CalendarView } from './components/CalendarView';
 import { Settings } from './components/Settings';
+import { UsersList } from './components/UsersList';
+import { AuditLogList } from './components/AuditLogList';
 import { MenuIcon, ChevronRightIcon } from './components/ui/Icons';
 import { AppProvider, useAppContext } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -40,9 +43,11 @@ const MainApplication: React.FC = () => {
       plans: Permission.VIEW_PLANS,
       payments: Permission.VIEW_PAYMENTS,
       expenses: Permission.VIEW_EXPENSES,
+      users: Permission.VIEW_USERS,
       reports: Permission.VIEW_REPORTS,
       calendar: Permission.VIEW_CALENDAR,
-      settings: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES],
+      settings: Permission.MANAGE_SETTINGS,
+      'audit-log': Permission.VIEW_AUDIT_LOG,
     };
 
     const requiredPermission = viewPermissionMap[view];
@@ -56,7 +61,7 @@ const MainApplication: React.FC = () => {
 
     if (!isAuthorized) {
         const availableViews: ViewType[] = [
-            'dashboard', 'members', 'plans', 'payments', 'expenses', 'reports', 'calendar', 'settings'
+            'dashboard', 'members', 'plans', 'payments', 'expenses', 'users', 'reports', 'calendar', 'settings', 'audit-log'
         ];
         
         const fallbackView = availableViews.find(v => {
@@ -100,9 +105,11 @@ const MainApplication: React.FC = () => {
       case 'plans': return <PlansList />;
       case 'payments': return <PaymentsList />;
       case 'expenses': return <ExpensesList />;
+      case 'users': return <UsersList />;
       case 'reports': return <Reports />;
       case 'calendar': return <CalendarView />;
       case 'settings': return <Settings />;
+      case 'audit-log': return <AuditLogList />;
       default: return <Dashboard />;
     }
   };
@@ -113,9 +120,11 @@ const MainApplication: React.FC = () => {
     plans: 'Planos de Matrícula',
     payments: 'Controle de Pagamentos',
     expenses: 'Gerenciamento de Despesas',
+    users: 'Gerenciamento de Usuários',
     reports: 'Relatórios de Pagamentos',
     calendar: 'Calendário de Pagamentos',
     settings: 'Configurações do Sistema',
+    'audit-log': 'Registro de Atividades',
   };
 
   return (

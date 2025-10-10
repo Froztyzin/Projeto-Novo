@@ -1,5 +1,7 @@
+
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import type { Member, Plan, ViewType } from '../types';
+import type { Member, Plan, ViewType, User } from '../types';
 import { Permission } from '../types';
 import { useAppContext } from '../contexts/AppContext';
 import { 
@@ -11,7 +13,9 @@ import {
     ReceiptIcon, 
     BarChartIcon, 
     CalendarIcon, 
-    SettingsIcon 
+    SettingsIcon,
+    UserCogIcon,
+    HistoryIcon
 } from './ui/Icons';
 
 interface CommandPaletteProps {
@@ -23,7 +27,7 @@ interface CommandPaletteProps {
 
 type SearchableItem = {
     id: string;
-    type: 'action' | 'member' | 'plan';
+    type: 'action' | 'member' | 'plan' | 'user';
     title: string;
     description?: string;
     icon: React.ReactNode;
@@ -37,9 +41,11 @@ const viewIcons: Record<ViewType, React.ReactNode> = {
     plans: <PackageIcon className="h-5 w-5" />,
     payments: <CreditCardIcon className="h-5 w-5" />,
     expenses: <ReceiptIcon className="h-5 w-5" />,
+    users: <UserCogIcon className="h-5 w-5" />,
     reports: <BarChartIcon className="h-5 w-5" />,
     calendar: <CalendarIcon className="h-5 w-5" />,
     settings: <SettingsIcon className="h-5 w-5" />,
+    'audit-log': <HistoryIcon className="h-5 w-5" />,
 };
 
 const viewTitles: Record<ViewType, string> = {
@@ -48,9 +54,11 @@ const viewTitles: Record<ViewType, string> = {
     plans: 'Planos',
     payments: 'Pagamentos',
     expenses: 'Despesas',
+    users: 'Usuários',
     reports: 'Relatórios',
     calendar: 'Calendário',
     settings: 'Configurações',
+    'audit-log': 'Registro de Atividades',
 };
 
 const navItems = [
@@ -59,13 +67,15 @@ const navItems = [
     { view: 'plans', label: 'Ir para Planos', permissions: [Permission.VIEW_PLANS] },
     { view: 'payments', label: 'Ir para Pagamentos', permissions: [Permission.VIEW_PAYMENTS] },
     { view: 'expenses', label: 'Ir para Despesas', permissions: [Permission.VIEW_EXPENSES] },
+    { view: 'users', label: 'Ir para Usuários', permissions: [Permission.VIEW_USERS] },
     { view: 'reports', label: 'Ir para Relatórios', permissions: [Permission.VIEW_REPORTS] },
     { view: 'calendar', label: 'Ir para Calendário', permissions: [Permission.VIEW_CALENDAR] },
     { view: 'settings', label: 'Ir para Configurações', permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
+    { view: 'audit-log', label: 'Ir para Registro de Atividades', permissions: [Permission.VIEW_AUDIT_LOG] },
 ];
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, setView, openMemberDetails }) => {
-    const { members, plans, hasPermission } = useAppContext();
+    const { members, plans, users, roles, hasPermission } = useAppContext();
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isMounted, setIsMounted] = useState(false);
@@ -117,8 +127,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             original: plan,
         }));
         
-        return [...actions, ...memberItems, ...planItems];
-    }, [members, plans, hasPermission, setView, openMemberDetails]);
+        const userItems: SearchableItem[] = users.map(user => ({
+            id: `user-${user.id}`,
+            type: 'user',
+            title: user.name,
+            description: `${user.email} - ${roles.find(r => r.id === user.roleId)?.name || 'N/A'}`,
+            icon: <UserCogIcon className="h-5 w-5" />,
+            action: () => setView('users'),
+            original: user,
+        }));
+        
+        return [...actions, ...memberItems, ...planItems, ...userItems];
+    }, [members, plans, users, roles, hasPermission, setView, openMemberDetails]);
 
     const filteredResults = useMemo(() => {
         if (!query) return [];
@@ -179,8 +199,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         action: 'Ações',
         member: 'Alunos',
         plan: 'Planos',
+        user: 'Usuários',
     };
-    const groupOrder: (keyof typeof groupTitles)[] = ['action', 'member', 'plan'];
+    const groupOrder: (keyof typeof groupTitles)[] = ['action', 'member', 'user', 'plan'];
 
     return (
         <div 
@@ -199,7 +220,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
                         type="text"
                         value={query}
                         onChange={e => setQuery(e.target.value)}
-                        placeholder="Buscar por alunos, planos ou ações..."
+                        placeholder="Buscar por alunos, planos, usuários ou ações..."
                         className="w-full bg-transparent focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400"
                     />
                 </div>

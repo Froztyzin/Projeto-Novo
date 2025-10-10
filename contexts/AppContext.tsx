@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Member, Plan, Payment, Expense, Role, User } from '../types';
-import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission } from '../types';
+import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
+import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
 import { useToast } from './ToastContext';
 import { GoogleGenAI } from '@google/genai';
 import { generateColorPalette } from '../utils';
@@ -75,11 +74,25 @@ const initialRoles: Role[] = [
     { id: 'role_staff', name: 'Recepcionista', description: 'Acesso para gerenciar alunos e registrar pagamentos.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.VIEW_CALENDAR ], isEditable: true }
 ];
 
-const dummyUsers: User[] = [
-    { id: 'user1', email: 'admin@elite.com', password: 'password', roleId: 'role_admin' },
-    { id: 'user2', email: 'gerente@elite.com', password: 'password', roleId: 'role_manager' },
-    { id: 'user3', email: 'staff@elite.com', password: 'password', roleId: 'role_staff' },
+const initialUsers: User[] = [
+    { id: 'user1', name: 'Admin User', email: 'admin@elite.com', password: 'password', roleId: 'role_admin' },
+    { id: 'user2', name: 'Gerente User', email: 'gerente@elite.com', password: 'password', roleId: 'role_manager' },
+    { id: 'user3', name: 'Staff User', email: 'staff@elite.com', password: 'password', roleId: 'role_staff' },
 ];
+
+const initialAuditLogs: AuditLog[] = [
+    { id: 'log1', timestamp: new Date(new Date().getTime() - 1000 * 60 * 5), userId: 'user2', userName: 'Gerente User', action: LogActionType.CREATE_MEMBER, details: 'Adicionou o aluno(a) "Ethan Hunt".' },
+    { id: 'log2', timestamp: new Date(new Date().getTime() - 1000 * 60 * 15), userId: 'user1', userName: 'Admin User', action: LogActionType.UPDATE_PLAN, details: 'Atualizou o plano "Elite Anual".' },
+    { id: 'log3', timestamp: new Date(new Date().getTime() - 1000 * 60 * 60), userId: 'user3', userName: 'Staff User', action: LogActionType.CREATE_PAYMENT, details: 'Registrou pagamento de R$30,00 para "Bob Williams".' },
+    { id: 'log4', timestamp: new Date(new Date().getTime() - 1000 * 60 * 120), userId: 'user1', userName: 'Admin User', action: LogActionType.USER_LOGIN, details: 'Fez login no sistema.' },
+];
+
+export interface BillingRulerSettings {
+  reminderBeforeDue: { enabled: boolean; days: number };
+  reminderOnDue: { enabled: boolean };
+  reminderAfterDue: { enabled: boolean; days: number };
+}
+
 
 // --- Context Definition ---
 interface AppContextType {
@@ -92,12 +105,16 @@ interface AppContextType {
   payments: Payment[];
   expenses: Expense[];
   roles: Role[];
+  users: User[];
+  auditLogs: AuditLog[];
   currentUserRole: string;
   hasPermission: (permission: Permission) => boolean;
   logo: string | null;
   primaryColor: string;
+  billingRulerSettings: BillingRulerSettings;
   updateLogo: (logo: string | null) => void;
   updatePrimaryColor: (color: string) => void;
+  updateBillingRulerSettings: (settings: BillingRulerSettings) => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   addMember: (member: Omit<Member, 'id'>) => void;
@@ -115,6 +132,9 @@ interface AppContextType {
   addRole: (role: Omit<Role, 'id'>) => void;
   updateRole: (updatedRole: Role) => void;
   deleteRole: (roleId: string) => void;
+  addUser: (user: Omit<User, 'id'>) => void;
+  updateUser: (updatedUser: User) => void;
+  deleteUser: (userId: string) => void;
   importData: (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => void;
   manuallyTriggerBilling: () => void;
   getAIResponse: (prompt: string) => Promise<string>;
@@ -137,18 +157,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [members, setMembers] = useState<Member[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  // RBAC states
+  // RBAC & Audit states
   const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs);
   const [currentUserRole, setCurrentUserRole] = useState<string>('');
   // Customization states
   const [logo, setLogo] = useState<string | null>(null);
   const [primaryColor, setPrimaryColor] = useState('#22c55e');
+  const [billingRulerSettings, setBillingRulerSettings] = useState<BillingRulerSettings>({
+    reminderBeforeDue: { enabled: true, days: 3 },
+    reminderOnDue: { enabled: true },
+    reminderAfterDue: { enabled: false, days: 5 },
+  });
+  
+  // --- Audit Log Helper ---
+  const addAuditLog = (action: LogActionType, details: string) => {
+    if (!currentUser) return;
+    const newLog: AuditLog = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        action,
+        details,
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+  };
 
   useEffect(() => {
     const checkAuthStatus = () => {
         const storedUserId = localStorage.getItem('currentUserId');
         if (storedUserId) {
-            const user = dummyUsers.find(u => u.id === storedUserId);
+            const user = initialUsers.find(u => u.id === storedUserId);
             if (user) {
                 setIsAuthenticated(true);
                 setCurrentUser(user);
@@ -161,8 +202,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const loadCustomization = () => {
       const storedLogo = localStorage.getItem('customLogo');
       const storedColor = localStorage.getItem('primaryColor');
+      const storedBillingSettings = localStorage.getItem('billingRulerSettings');
+
       if (storedLogo) setLogo(storedLogo);
       if (storedColor) setPrimaryColor(storedColor);
+      if (storedBillingSettings) setBillingRulerSettings(JSON.parse(storedBillingSettings));
     };
 
     const loadInitialData = () => {
@@ -213,19 +257,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // --- Auth Functions ---
   const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
-      const user = dummyUsers.find(u => u.email === email && u.password === password);
+      const user = users.find(u => u.email === email && u.password === password);
       if (user) {
           setIsAuthenticated(true);
           setCurrentUser(user);
           setCurrentUserRole(user.roleId);
           localStorage.setItem('currentUserId', user.id);
-          addToast(`Bem-vindo, ${user.email}!`, 'success');
+          addToast(`Bem-vindo, ${user.name}!`, 'success');
+          addAuditLog(LogActionType.USER_LOGIN, 'Fez login no sistema.');
           return { success: true };
       }
       return { success: false, message: 'Credenciais inválidas.' };
   };
 
   const logout = () => {
+      addAuditLog(LogActionType.USER_LOGOUT, 'Fez logout do sistema.');
       setIsAuthenticated(false);
       setCurrentUser(null);
       setCurrentUserRole('');
@@ -249,12 +295,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem('customLogo');
       setLogo(null);
     }
+     addAuditLog(LogActionType.UPDATE_SETTINGS, 'Atualizou o logo da academia.');
   }
 
   const updatePrimaryColor = (newColor: string) => {
       localStorage.setItem('primaryColor', newColor);
       setPrimaryColor(newColor);
+      addAuditLog(LogActionType.UPDATE_SETTINGS, `Alterou a cor primária para ${newColor}.`);
   }
+  
+  const updateBillingRulerSettings = (settings: BillingRulerSettings) => {
+    localStorage.setItem('billingRulerSettings', JSON.stringify(settings));
+    setBillingRulerSettings(settings);
+    addAuditLog(LogActionType.UPDATE_SETTINGS, 'Atualizou as configurações da régua de cobrança.');
+  };
+
 
   // --- Gemini AI ---
   const getAIResponse = async (prompt: string): Promise<string> => {
@@ -447,40 +502,48 @@ ${JSON.stringify(dataContext, null, 2)}
   };
 
   // --- CRUD Functions ---
-  const updateMember = (updatedMember: Member) => {
-    setMembers(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
-  };
-  
   const addMember = (member: Omit<Member, 'id'>) => {
     const newMember = { ...member, id: `mem${Date.now()}` };
     setMembers(prev => [...prev, newMember]);
     addToast('Aluno adicionado com sucesso!', 'success');
+    addAuditLog(LogActionType.CREATE_MEMBER, `Adicionou o aluno(a) "${newMember.name}".`);
   };
   
-  const updateMemberWithToast = (updatedMember: Member) => {
-    updateMember(updatedMember);
+  const updateMember = (updatedMember: Member) => {
+    setMembers(prev => prev.map(m => m.id === updatedMember.id ? updatedMember : m));
     addToast('Aluno atualizado com sucesso!', 'success');
+    addAuditLog(LogActionType.UPDATE_MEMBER, `Atualizou os dados do aluno(a) "${updatedMember.name}".`);
   };
 
   const deleteMember = (memberId: string) => {
+    const memberToDelete = members.find(m => m.id === memberId);
     setMembers(prev => prev.filter(m => m.id !== memberId));
     addToast('Aluno excluído com sucesso!', 'success');
+    if (memberToDelete) {
+        addAuditLog(LogActionType.DELETE_MEMBER, `Excluiu o aluno(a) "${memberToDelete.name}".`);
+    }
   };
   
   const addPlan = (plan: Omit<Plan, 'id'>) => {
     const newPlan = { ...plan, id: `plan${Date.now()}` };
     setPlans(prev => [...prev, newPlan]);
     addToast('Plano adicionado com sucesso!', 'success');
+    addAuditLog(LogActionType.CREATE_PLAN, `Adicionou o plano "${newPlan.name}".`);
   };
 
   const updatePlan = (updatedPlan: Plan) => {
     setPlans(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
     addToast('Plano atualizado com sucesso!', 'success');
+    addAuditLog(LogActionType.UPDATE_PLAN, `Atualizou o plano "${updatedPlan.name}".`);
   };
   
   const deletePlan = (planId: string) => {
+     const planToDelete = plans.find(p => p.id === planId);
      setPlans(prev => prev.filter(p => p.id !== planId));
      addToast('Plano excluído com sucesso!', 'success');
+     if (planToDelete) {
+        addAuditLog(LogActionType.DELETE_PLAN, `Excluiu o plano "${planToDelete.name}".`);
+     }
   };
 
   const addPayment = (payment: Omit<Payment, 'id'>) => {
@@ -491,50 +554,95 @@ ${JSON.stringify(dataContext, null, 2)}
         updateMember({...member, status: MemberStatus.Active});
     }
     addToast('Pagamento registrado com sucesso!', 'success');
+    addAuditLog(LogActionType.CREATE_PAYMENT, `Registrou pagamento de ${payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} para "${member?.name || 'N/A'}".`);
   };
 
   const updatePayment = (updatedPayment: Payment) => {
     setPayments(prev => prev.map(p => p.id === updatedPayment.id ? updatedPayment : p).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     addToast('Pagamento atualizado com sucesso!', 'success');
+    const member = members.find(m => m.id === updatedPayment.memberId);
+    addAuditLog(LogActionType.UPDATE_PAYMENT, `Atualizou pagamento de ${updatedPayment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} para "${member?.name || 'N/A'}".`);
   };
 
   const deletePayment = (paymentId: string) => {
+    const paymentToDelete = payments.find(p => p.id === paymentId);
     setPayments(prev => prev.filter(p => p.id !== paymentId));
     addToast('Pagamento excluído com sucesso!', 'success');
+    if (paymentToDelete) {
+        const member = members.find(m => m.id === paymentToDelete.memberId);
+        addAuditLog(LogActionType.DELETE_PAYMENT, `Excluiu pagamento de ${paymentToDelete.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} de "${member?.name || 'N/A'}".`);
+    }
   };
 
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     const newExpense = { ...expense, id: `exp${Date.now()}` };
     setExpenses(prev => [newExpense, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime()));
     addToast('Despesa adicionada com sucesso!', 'success');
+    addAuditLog(LogActionType.CREATE_EXPENSE, `Adicionou a despesa "${newExpense.description}".`);
   };
 
   const updateExpense = (updatedExpense: Expense) => {
     setExpenses(prev => prev.map(e => e.id === updatedExpense.id ? updatedExpense : e).sort((a, b) => b.date.getTime() - a.date.getTime()));
     addToast('Despesa atualizada com sucesso!', 'success');
+    addAuditLog(LogActionType.UPDATE_EXPENSE, `Atualizou a despesa "${updatedExpense.description}".`);
   };
 
   const deleteExpense = (expenseId: string) => {
+    const expenseToDelete = expenses.find(e => e.id === expenseId);
     setExpenses(prev => prev.filter(e => e.id !== expenseId));
     addToast('Despesa excluída com sucesso!', 'success');
+    if (expenseToDelete) {
+      addAuditLog(LogActionType.DELETE_EXPENSE, `Excluiu a despesa "${expenseToDelete.description}".`);
+    }
   };
 
   const addRole = (role: Omit<Role, 'id'>) => {
       const newRole = { ...role, id: `role_${Date.now()}`, isEditable: true };
       setRoles(prev => [...prev, newRole]);
       addToast('Função adicionada com sucesso!', 'success');
+      addAuditLog(LogActionType.CREATE_ROLE, `Adicionou a função "${newRole.name}".`);
   };
 
   const updateRole = (updatedRole: Role) => {
       setRoles(prev => prev.map(r => r.id === updatedRole.id ? updatedRole : r));
       addToast('Função atualizada com sucesso!', 'success');
+      addAuditLog(LogActionType.UPDATE_ROLE, `Atualizou a função "${updatedRole.name}".`);
   };
 
   const deleteRole = (roleId: string) => {
+      const roleToDelete = roles.find(r => r.id === roleId);
       setRoles(prev => prev.filter(r => r.id !== roleId));
       addToast('Função excluída com sucesso!', 'success');
+      if (roleToDelete) {
+        addAuditLog(LogActionType.DELETE_ROLE, `Excluiu a função "${roleToDelete.name}".`);
+      }
+  };
+  
+  const addUser = (user: Omit<User, 'id'>) => {
+      const newUser = { ...user, id: `user-${Date.now()}` };
+      setUsers(prev => [...prev, newUser]);
+      addToast('Usuário adicionado com sucesso!', 'success');
+      addAuditLog(LogActionType.CREATE_USER, `Adicionou o usuário "${newUser.name}".`);
   };
 
+  const updateUser = (updatedUser: User) => {
+      setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
+      addToast('Usuário atualizado com sucesso!', 'success');
+      addAuditLog(LogActionType.UPDATE_USER, `Atualizou os dados do usuário "${updatedUser.name}".`);
+  };
+
+  const deleteUser = (userId: string) => {
+      if (userId === currentUser?.id) {
+          addToast('Você não pode excluir a si mesmo.', 'error');
+          return;
+      }
+      const userToDelete = users.find(u => u.id === userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      addToast('Usuário excluído com sucesso!', 'success');
+      if (userToDelete) {
+        addAuditLog(LogActionType.DELETE_USER, `Excluiu o usuário "${userToDelete.name}".`);
+      }
+  };
 
   const importData = (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => {
     try {
@@ -555,6 +663,7 @@ ${JSON.stringify(dataContext, null, 2)}
         if (data.payments) setPayments(parseDates(data.payments, ['date', 'paidDate']));
         if (data.expenses) setExpenses(parseDates(data.expenses, ['date']));
         addToast('Dados importados com sucesso!', 'success');
+        addAuditLog(LogActionType.IMPORT_DATA, 'Realizou a importação de dados para o sistema.');
 
     } catch (error) {
         console.error("Erro ao importar dados:", error);
@@ -565,14 +674,16 @@ ${JSON.stringify(dataContext, null, 2)}
 
   const value = {
     isLoading, isAuthLoading, isAuthenticated, currentUser,
-    members, plans, payments, expenses, roles, currentUserRole, hasPermission,
-    logo, primaryColor, updateLogo, updatePrimaryColor,
+    members, plans, payments, expenses, roles, users, auditLogs, currentUserRole, hasPermission,
+    logo, primaryColor, billingRulerSettings,
+    updateLogo, updatePrimaryColor, updateBillingRulerSettings,
     login, logout,
-    addMember, updateMember: updateMemberWithToast, deleteMember,
+    addMember, updateMember, deleteMember,
     addPlan, updatePlan, deletePlan,
     addPayment, updatePayment, deletePayment,
     addExpense, updateExpense, deleteExpense,
     addRole, updateRole, deleteRole,
+    addUser, updateUser, deleteUser,
     importData,
     manuallyTriggerBilling,
     getAIResponse,
