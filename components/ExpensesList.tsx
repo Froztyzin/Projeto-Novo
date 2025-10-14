@@ -103,8 +103,8 @@ export const ExpensesList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-        <div className="flex flex-col sm:flex-row justify-end items-center mb-6 gap-4">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
           <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
             <input
               type="text"
@@ -122,7 +122,7 @@ export const ExpensesList: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {statCards.map((card, index) => (
               <div key={card.title} className="animate-stagger" style={{ animationDelay: `${index * 100}ms` }}>
                   <StatCard {...card} />
@@ -247,15 +247,14 @@ export const ExpensesList: React.FC = () => {
                   </div>
               )}
           </div>
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          totalItems={filteredExpenses.length}
+          itemsPerPage={pagination.ITEMS_PER_PAGE}
+        />
       </div>
-      
-      <Pagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-        totalItems={filteredExpenses.length}
-        itemsPerPage={pagination.ITEMS_PER_PAGE}
-      />
       
       {isModalOpen && (
         <ExpenseFormModal

@@ -196,7 +196,11 @@ export const PaymentsList: React.FC = () => {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={7} className="text-center p-8 text-gray-500 dark:text-gray-400">Nenhum pagamento encontrado.</td></tr>
+                  <tr>
+                    <td colSpan={7} className="text-center p-8 text-gray-500 dark:text-gray-400">
+                      {allPayments.length === 0 ? 'Nenhum pagamento registrado ainda.' : 'Nenhum pagamento encontrado com os filtros aplicados.'}
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -258,16 +262,15 @@ export const PaymentsList: React.FC = () => {
                 </div>
             )}
         </div>
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          totalItems={processedPayments.length}
+          itemsPerPage={pagination.ITEMS_PER_PAGE}
+        />
       </div>
       
-      <Pagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-        totalItems={processedPayments.length}
-        itemsPerPage={pagination.ITEMS_PER_PAGE}
-      />
-
       {isModalOpen && <PaymentFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addPayment={addPayment} updatePayment={updatePayment} payment={editingPayment} members={members} plans={plans} />}
       {isConfirmModalOpen && <ConfirmationModal isOpen={isConfirmModalOpen} onClose={() => setIsConfirmModalOpen(false)} onConfirm={handleConfirmDelete} title="Confirmar Exclusão" message="Você tem certeza que deseja excluir este registro de pagamento? Esta ação não pode ser desfeita." />}
       {reminderModalData && (

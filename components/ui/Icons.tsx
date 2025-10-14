@@ -45,3 +45,6 @@ export const ChevronsRightIcon = createIcon("m13 17 5-5-5-5M6 17l5-5-5-5");
 export const UserCircleIcon = createIconWithPaths(["M5.52 19c.64-2.2 1.84-3 3.22-3h6.52c1.38 0 2.58.8 3.22 3", "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"]);
 export const GraduationCapIcon = createIconWithPaths(["M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.084a1 1 0 0 0 0 1.838l8.57 3.908a2 2 0 0 0 1.66 0z", "M22 10v6", "M6 12.07V16a6 6 0 0 0 6 6v-3"]);
 export const BellIcon = createIconWithPaths(["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9", "M13.73 21a2 2 0 0 1-3.46 0"]);
+export const TrendingUpIcon = createIcon("M23 6l-9.5 9.5-5-5L1 18");
+export const ArrowUp = createIcon("M12 5l-7 7h14z");
+export const ArrowDown = createIcon("M12 19l7-7H5z");

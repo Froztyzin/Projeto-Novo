@@ -7,6 +7,8 @@ export enum MemberStatus {
     Active = 'Ativo',
     Inactive = 'Inativo',
     Pending = 'Pendente',
+    Archived = 'Arquivado',
+    Prospect = 'Potencial',
 }
 
 export enum PaymentStatus {

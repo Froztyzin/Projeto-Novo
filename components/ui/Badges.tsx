@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { MemberStatus, PaymentStatus, ExpenseStatus } from '../../types';
 
@@ -18,6 +19,8 @@ export const MemberStatusBadge: React.FC<{ status: MemberStatus }> = ({ status }
     [MemberStatus.Active]: 'bg-primary-100 text-primary-800 dark:bg-primary-500/10 dark:text-primary-400',
     [MemberStatus.Inactive]: 'bg-slate-100 text-slate-800 dark:bg-slate-500/10 dark:text-slate-400',
     [MemberStatus.Pending]: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/10 dark:text-yellow-400',
+    [MemberStatus.Archived]: 'bg-gray-200 text-gray-800 dark:bg-gray-700/50 dark:text-gray-300',
+    [MemberStatus.Prospect]: 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300',
   };
   return <Badge className={statusClasses[status]}>{status}</Badge>;
 };

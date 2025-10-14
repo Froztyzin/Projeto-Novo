@@ -45,7 +45,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   const pages = getPageNumbers();
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between mt-6 px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700">
       <div className="text-sm text-gray-700 dark:text-gray-300 mb-4 sm:mb-0">
         Mostrando <span className="font-semibold">{startItem}</span> a <span className="font-semibold">{endItem}</span> de <span className="font-semibold">{totalItems}</span> resultados
       </div>

@@ -302,15 +302,14 @@ export const MembersList: React.FC = () => {
                     </div>
                 )}
             </div>
+          <Pagination 
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+            totalItems={filteredMembers.length}
+            itemsPerPage={pagination.ITEMS_PER_PAGE}
+          />
       </div>
-      
-      <Pagination 
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-        totalItems={filteredMembers.length}
-        itemsPerPage={pagination.ITEMS_PER_PAGE}
-      />
       
       {isModalOpen && (
         <MemberFormModal

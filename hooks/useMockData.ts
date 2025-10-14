@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
 import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
@@ -14,6 +15,8 @@ const initialMembers: Member[] = [
   { id: 'mem3', name: 'Charlie Brown', email: 'charlie@example.com', joinDate: new Date(new Date().setMonth(new Date().getMonth() - 2)), planId: 'plan2', status: MemberStatus.Pending },
   { id: 'mem4', name: 'Diana Prince', email: 'diana@example.com', telefone: '(31) 99999-8888', joinDate: new Date('2022-11-01'), planId: 'plan3', status: MemberStatus.Inactive },
   { id: 'mem5', name: 'Ethan Hunt', email: 'ethan@example.com', joinDate: new Date('2023-06-20'), planId: 'plan1', status: MemberStatus.Active },
+  { id: 'mem6', name: 'Fiona Glenanne', email: 'fiona@example.com', joinDate: new Date(), planId: 'plan1', status: MemberStatus.Prospect },
+  { id: 'mem7', name: 'Geralt of Rivia', email: 'geralt@example.com', joinDate: new Date('2021-01-01'), planId: 'plan3', status: MemberStatus.Archived },
 ];
 
 const generateInitialPayments = (members: Member[], plans: Plan[]): Payment[] => {
@@ -36,6 +39,8 @@ const generateInitialPayments = (members: Member[], plans: Plan[]): Payment[] =>
             if (member.status === MemberStatus.Pending) {
                 status = PaymentStatus.Overdue;
                 payments.push({ id: `pay${payments.length + 1}`, memberId: member.id, planId: member.planId, description: `Pagamento pendente para ${plan.name}`, amount: plan.price, date: dueDate, status, paidDate: undefined });
+                break;
+            } else if (member.status === MemberStatus.Prospect || member.status === MemberStatus.Archived) {
                 break; 
             }
             if (member.status === MemberStatus.Inactive && dueDate > new Date('2023-03-01')) break;

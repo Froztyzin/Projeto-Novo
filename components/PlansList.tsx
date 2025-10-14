@@ -70,67 +70,69 @@ export const PlansList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-        {hasPermission(Permission.CREATE_PLANS) && (
-            <div className="flex justify-end mb-6">
-              <Button onClick={handleAddNew} className="flex items-center">
-                <PlusCircleIcon className="w-5 h-5 mr-2" />
-                Adicionar Plano
-              </Button>
-            </div>
-        )}
-        
-        {currentPlans.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentPlans.map((plan, index) => (
-              <div 
-                key={plan.id} 
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 flex flex-col justify-between hover:shadow-lg transition-shadow animate-stagger"
-                style={{ animationDelay: `${index * 70}ms` }}
-              >
-                <div>
-                  <h3 className="text-xl font-bold text-primary-600 dark:text-primary-400">{plan.name}</h3>
-                  <p className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 my-4">{plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })}</p>
-                  <p className="text-gray-500 dark:text-gray-400">{plan.durationInMonths} Mês{plan.durationInMonths > 1 ? 'es' : ''}</p>
-                  {plan.dueDateDayOfMonth && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                      Dia de Vencimento: <span className="font-semibold">{plan.dueDateDayOfMonth}</span>
-                    </p>
-                  )}
-                </div>
-                <div className="mt-6 flex justify-end space-x-2">
-                  {hasPermission(Permission.UPDATE_PLANS) && (
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(plan)}>
-                        <EditIcon className="w-5 h-5" />
-                      </Button>
-                  )}
-                  {hasPermission(Permission.DELETE_PLANS) && (
-                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRequest(plan.id)}>
-                        <TrashIcon className="w-5 h-5" />
-                      </Button>
-                  )}
-                </div>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md">
+        <div className="p-6">
+          {hasPermission(Permission.CREATE_PLANS) && (
+              <div className="flex justify-end mb-6">
+                <Button onClick={handleAddNew} className="flex items-center">
+                  <PlusCircleIcon className="w-5 h-5 mr-2" />
+                  Adicionar Plano
+                </Button>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16">
-              <PackageIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-200">Nenhum plano cadastrado</h3>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {allPlans.length === 0 ? "Comece adicionando um novo plano de matrícula." : "Nenhum plano encontrado."}
-              </p>
-          </div>
-        )}
-      </div>
+          )}
+          
+          {currentPlans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {currentPlans.map((plan, index) => (
+                <div 
+                  key={plan.id} 
+                  className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 flex flex-col justify-between hover:shadow-lg transition-shadow animate-stagger"
+                  style={{ animationDelay: `${index * 70}ms` }}
+                >
+                  <div>
+                    <h3 className="text-xl font-bold text-primary-600 dark:text-primary-400">{plan.name}</h3>
+                    <p className="text-3xl font-extrabold text-gray-800 dark:text-gray-100 my-4">{plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{plan.durationInMonths} Mês{plan.durationInMonths > 1 ? 'es' : ''}</p>
+                    {plan.dueDateDayOfMonth && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Dia de Vencimento: <span className="font-semibold">{plan.dueDateDayOfMonth}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-6 flex justify-end space-x-2">
+                    {hasPermission(Permission.UPDATE_PLANS) && (
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(plan)}>
+                          <EditIcon className="w-5 h-5" />
+                        </Button>
+                    )}
+                    {hasPermission(Permission.DELETE_PLANS) && (
+                        <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteRequest(plan.id)}>
+                          <TrashIcon className="w-5 h-5" />
+                        </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+                <PackageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-200">Nenhum plano cadastrado</h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  {allPlans.length === 0 ? "Comece adicionando um novo plano de matrícula." : "Nenhum plano encontrado."}
+                </p>
+            </div>
+          )}
+        </div>
 
-      <Pagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-        totalItems={allPlans.length}
-        itemsPerPage={pagination.ITEMS_PER_PAGE}
-      />
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          totalItems={allPlans.length}
+          itemsPerPage={pagination.ITEMS_PER_PAGE}
+        />
+      </div>
 
       {isModalOpen && (
         <PlanFormModal

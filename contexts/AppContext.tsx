@@ -412,8 +412,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const getReportInsights = async (reportData: any): Promise<string> => {
         console.log("Report insights requested with data:", reportData);
         await new Promise(resolve => setTimeout(resolve, 500));
-        const topPlan = reportData.revenueByPlan.length > 0 ? reportData.revenueByPlan[0].name : 'N/A';
-        return `**Análise Fictícia:** O relatório indica que o plano **${topPlan}** é o mais rentável. A receita total de **${reportData.totalRevenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}** é um bom indicador. **Sugestão:** Considere criar uma promoção para o plano **${topPlan}** para atrair novos alunos.`;
+        const { netIncome, netIncomeChange, revenueByPlan, expensesByCategory, totalRevenue } = reportData;
+
+        const formatChange = (change: number | null) => {
+            if (change === null || !isFinite(change)) return "estável";
+            return `${change >= 0 ? 'aumento' : 'queda'} de ${Math.abs(change).toFixed(1)}%`;
+        }
+        
+        const topPlan = revenueByPlan.length > 0 ? revenueByPlan[0].name : 'N/A';
+        const topExpense = expensesByCategory.length > 0 ? expensesByCategory[0].name : 'N/A';
+        
+        let analysis = `**Análise Fictícia Aprimorada:** No período, o **lucro líquido** foi de **${netIncome.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}**, representando um(a) **${formatChange(netIncomeChange)}** em relação ao período anterior.`;
+        
+        if (netIncomeChange > 5) {
+            analysis += " Um ótimo sinal de saúde financeira!";
+        } else if (netIncomeChange < -5) {
+            analysis += " É importante investigar as causas dessa queda.";
+        }
+        
+        analysis += `\nA receita foi impulsionada pelo plano **${topPlan}**. As despesas foram lideradas por **${topExpense}**.`;
+        
+        const forecast = totalRevenue * (1 + (reportData.revenueChange / 100));
+        
+        analysis += `\n\n**Previsão:** Com base na tendência atual, a previsão de receita para o próximo período é de aproximadamente **${(forecast * 1.05).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}**.`;
+        
+        return analysis;
     };
   
     const getMemberInsights = async (member: Member, memberPayments: Payment[], memberPlan: Plan | null): Promise<{ risk: 'Alto' | 'Médio' | 'Baixo', analysis: string }> => {
