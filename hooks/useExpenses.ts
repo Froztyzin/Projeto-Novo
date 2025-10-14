@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import { ExpenseStatus } from '../types';
 
@@ -7,16 +7,29 @@ const ITEMS_PER_PAGE = 10;
 export const useExpenses = () => {
     const { expenses, isLoading } = useAppContext();
     
-    const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState({
+        searchTerm: '',
+        startDate: '',
+        endDate: '',
+    });
     const [currentPage, setCurrentPage] = useState(1);
     
     const filteredExpenses = useMemo(() => {
         if (isLoading) return [];
-        return expenses.filter(expense =>
-            expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [expenses, searchTerm, isLoading]);
+        return expenses.filter(expense => {
+            const searchTermMatch =
+                expense.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+                expense.category.toLowerCase().includes(filters.searchTerm.toLowerCase());
+            
+            const expenseDate = new Date(expense.date);
+            expenseDate.setHours(0, 0, 0, 0);
+
+            const startDateMatch = filters.startDate === '' || expenseDate >= new Date(new Date(filters.startDate).setHours(0,0,0,0));
+            const endDateMatch = filters.endDate === '' || expenseDate <= new Date(new Date(filters.endDate).setHours(0,0,0,0));
+            
+            return searchTermMatch && startDateMatch && endDateMatch;
+        });
+    }, [expenses, filters, isLoading]);
 
     const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
     
@@ -28,7 +41,7 @@ export const useExpenses = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm]);
+    }, [filters]);
     
     const financialSummary = useMemo(() => {
         const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -38,15 +51,28 @@ export const useExpenses = () => {
         const pendingAmount = totalAmount - paidAmount;
         return { totalAmount, paidAmount, pendingAmount };
     }, [filteredExpenses]);
+    
+    const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            searchTerm: '',
+            startDate: '',
+            endDate: '',
+        });
+    }
 
     return {
         isLoading,
         expenses: currentExpenses,
         filteredExpenses,
-        searchTerm,
+        filters,
         pagination: { currentPage, totalPages, ITEMS_PER_PAGE },
         financialSummary,
-        handleSearchChange: setSearchTerm,
+        handleFilterChange,
         handlePageChange: setCurrentPage,
+        clearFilters,
     };
 };
