@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui/Button';
-import type { AuthView } from '../types';
 import { AuthContainer } from './AuthContainer';
 
-interface RequestPasswordResetPageProps {
-    setAuthView: (view: AuthView) => void;
-    setResetToken: (token: string) => void;
-}
-
-export const RequestPasswordResetPage: React.FC<RequestPasswordResetPageProps> = ({ setAuthView, setResetToken }) => {
+export const RequestPasswordResetPage: React.FC = () => {
     const { requestPasswordResetForMember } = useAppContext();
     const { addToast } = useToast();
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
@@ -27,8 +23,7 @@ export const RequestPasswordResetPage: React.FC<RequestPasswordResetPageProps> =
             addToast(result.message, 'success');
             if (result.token) {
                  setTimeout(() => {
-                    setResetToken(result.token!);
-                    setAuthView('resetPassword');
+                    navigate(`/reset-password/${result.token}`);
                 }, 1000); 
             } else {
                  setIsSubmitted(true);
@@ -79,7 +74,7 @@ export const RequestPasswordResetPage: React.FC<RequestPasswordResetPageProps> =
             )}
             
             <div className="mt-8 text-center text-sm">
-                <button onClick={() => setAuthView('adminLogin')} className="font-medium text-purple-400 hover:text-purple-300">
+                <button onClick={() => navigate('/login')} className="font-medium text-purple-400 hover:text-purple-300">
                     Lembrou a senha? Voltar para o Login
                 </button>
             </div>

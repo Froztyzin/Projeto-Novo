@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Member, Plan, ViewType, User } from '../types';
 import { Permission } from '../types';
+// FIX: Replaced `useData` and `useAuth` with `useAppContext` as they do not exist.
 import { useAppContext } from '../contexts/AppContext';
 import { 
     SearchIcon, 
@@ -19,7 +21,6 @@ import {
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
-  setView: (view: ViewType) => void;
   openMemberDetails: (member: Member) => void;
 }
 
@@ -33,47 +34,48 @@ type SearchableItem = {
     original: any;
 };
 
-const viewIcons: Record<ViewType, React.ReactNode> = {
-    dashboard: <DashboardIcon className="h-5 w-5" />,
-    members: <UsersIcon className="h-5 w-5" />,
-    plans: <PackageIcon className="h-5 w-5" />,
-    payments: <CreditCardIcon className="h-5 w-5" />,
-    expenses: <ReceiptIcon className="h-5 w-5" />,
-    users: <UserCogIcon className="h-5 w-5" />,
-    reports: <BarChartIcon className="h-5 w-5" />,
-    calendar: <CalendarIcon className="h-5 w-5" />,
-    settings: <SettingsIcon className="h-5 w-5" />,
-    'audit-log': <HistoryIcon className="h-5 w-5" />,
+const viewIcons: Record<string, React.ReactNode> = {
+    '/dashboard': <DashboardIcon className="h-5 w-5" />,
+    '/members': <UsersIcon className="h-5 w-5" />,
+    '/plans': <PackageIcon className="h-5 w-5" />,
+    '/payments': <CreditCardIcon className="h-5 w-5" />,
+    '/expenses': <ReceiptIcon className="h-5 w-5" />,
+    '/users': <UserCogIcon className="h-5 w-5" />,
+    '/reports': <BarChartIcon className="h-5 w-5" />,
+    '/calendar': <CalendarIcon className="h-5 w-5" />,
+    '/settings': <SettingsIcon className="h-5 w-5" />,
+    '/audit-log': <HistoryIcon className="h-5 w-5" />,
 };
 
-const viewTitles: Record<ViewType, string> = {
-    dashboard: 'Painel',
-    members: 'Alunos',
-    plans: 'Planos',
-    payments: 'Pagamentos',
-    expenses: 'Despesas',
-    users: 'Usuários',
-    reports: 'Relatórios',
-    calendar: 'Calendário',
-    settings: 'Configurações',
-    'audit-log': 'Registro de Atividades',
+const viewTitles: Record<string, string> = {
+    '/dashboard': 'Painel',
+    '/members': 'Alunos',
+    '/plans': 'Planos',
+    '/payments': 'Pagamentos',
+    '/expenses': 'Despesas',
+    '/users': 'Usuários',
+    '/reports': 'Relatórios',
+    '/calendar': 'Calendário',
+    '/settings': 'Configurações',
+    '/audit-log': 'Registro de Atividades',
 };
 
 const navItems = [
-    { view: 'dashboard', label: 'Ir para o Painel', permissions: [Permission.VIEW_DASHBOARD] },
-    { view: 'members', label: 'Ir para Alunos', permissions: [Permission.VIEW_MEMBERS] },
-    { view: 'plans', label: 'Ir para Planos', permissions: [Permission.VIEW_PLANS] },
-    { view: 'payments', label: 'Ir para Pagamentos', permissions: [Permission.VIEW_PAYMENTS] },
-    { view: 'expenses', label: 'Ir para Despesas', permissions: [Permission.VIEW_EXPENSES] },
-    { view: 'users', label: 'Ir para Usuários', permissions: [Permission.VIEW_USERS] },
-    { view: 'reports', label: 'Ir para Relatórios', permissions: [Permission.VIEW_REPORTS] },
-    { view: 'calendar', label: 'Ir para Calendário', permissions: [Permission.VIEW_CALENDAR] },
-    { view: 'settings', label: 'Ir para Configurações', permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
-    { view: 'audit-log', label: 'Ir para Registro de Atividades', permissions: [Permission.VIEW_AUDIT_LOG] },
+    { to: '/dashboard', label: 'Ir para o Painel', permissions: [Permission.VIEW_DASHBOARD] },
+    { to: '/members', label: 'Ir para Alunos', permissions: [Permission.VIEW_MEMBERS] },
+    { to: '/plans', label: 'Ir para Planos', permissions: [Permission.VIEW_PLANS] },
+    { to: '/payments', label: 'Ir para Pagamentos', permissions: [Permission.VIEW_PAYMENTS] },
+    { to: '/expenses', label: 'Ir para Despesas', permissions: [Permission.VIEW_EXPENSES] },
+    { to: '/users', label: 'Ir para Usuários', permissions: [Permission.VIEW_USERS] },
+    { to: '/reports', label: 'Ir para Relatórios', permissions: [Permission.VIEW_REPORTS] },
+    { to: '/calendar', label: 'Ir para Calendário', permissions: [Permission.VIEW_CALENDAR] },
+    { to: '/settings', label: 'Ir para Configurações', permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
+    { to: '/audit-log', label: 'Ir para Registro de Atividades', permissions: [Permission.VIEW_AUDIT_LOG] },
 ];
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, setView, openMemberDetails }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose, openMemberDetails }) => {
     const { members, plans, users, roles, hasPermission } = useAppContext();
+    const navigate = useNavigate();
     const [query, setQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [isMounted, setIsMounted] = useState(false);
@@ -96,12 +98,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
         const actions: SearchableItem[] = navItems
             .filter(item => item.permissions.some(p => hasPermission(p)))
             .map(item => ({
-                id: `action-${item.view}`,
+                id: `action-${item.to}`,
                 type: 'action',
                 title: item.label,
-                description: `Navegar para a tela de ${viewTitles[item.view as ViewType]}`,
-                icon: viewIcons[item.view as ViewType],
-                action: () => setView(item.view as ViewType),
+                description: `Navegar para a tela de ${viewTitles[item.to]}`,
+                icon: viewIcons[item.to],
+                action: () => navigate(item.to),
                 original: item,
             }));
         
@@ -121,7 +123,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             title: plan.name,
             description: `Plano de ${plan.price.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'})}`,
             icon: <PackageIcon className="h-5 w-5" />,
-            action: () => setView('plans'),
+            action: () => navigate('/plans'),
             original: plan,
         }));
         
@@ -131,12 +133,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ isOpen, onClose,
             title: user.name,
             description: `${user.email} - ${roles.find(r => r.id === user.roleId)?.name || 'N/A'}`,
             icon: <UserCogIcon className="h-5 w-5" />,
-            action: () => setView('users'),
+            action: () => navigate('/users'),
             original: user,
         }));
         
         return [...actions, ...memberItems, ...planItems, ...userItems];
-    }, [members, plans, users, roles, hasPermission, setView, openMemberDetails]);
+    }, [members, plans, users, roles, hasPermission, navigate, openMemberDetails]);
 
     const filteredResults = useMemo(() => {
         if (!query) return [];

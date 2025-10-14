@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+import React, { ErrorInfo, ReactNode } from 'react';
 import { Button } from './ui/Button';
 import { AlertTriangleIcon } from './ui/Icons';
 
@@ -10,8 +11,9 @@ interface State {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
-  // FIX: Replaced the constructor with a state property initializer. This is a more concise and modern approach that resolves the type errors where `this.state` and `this.props` were not being correctly recognized.
+// FIX: Switched to extending React.Component directly to ensure consistent
+// type inference for component props across different environments.
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(_: Error): State {

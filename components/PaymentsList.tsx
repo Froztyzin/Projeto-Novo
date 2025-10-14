@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { Payment, Member, Plan } from '../types';
+import type { Payment, Member } from '../types';
 import { Button } from './ui/Button';
 import { PlusCircleIcon, EditIcon, TrashIcon, CreditCardIcon, DollarSignIcon, AlertTriangleIcon, CheckCircleIcon, SparklesIcon } from './ui/Icons';
 import { ConfirmationModal } from './ui/ConfirmationModal';
@@ -7,6 +7,7 @@ import { PaymentStatusBadge } from './ui/Badges';
 import { PaymentFormModal } from './PaymentFormModal';
 import { PaymentStatus, Permission } from '../types';
 import { useAppContext } from '../contexts/AppContext';
+import { usePayments } from '../hooks/usePayments';
 import { Skeleton } from './ui/Skeleton';
 import { Card, CardContent } from './ui/Card';
 import { Pagination } from './ui/Pagination';
@@ -62,79 +63,29 @@ const StatCard: React.FC<{ title: string; value: string; count: number; icon: Re
 type SortableKeys = keyof Payment | 'memberName' | 'planName';
 
 export const PaymentsList: React.FC = () => {
-  const { payments, members, plans, addPayment, updatePayment, deletePayment, hasPermission, isLoading } = useAppContext();
+  const { members, plans, addPayment, updatePayment, deletePayment, hasPermission } = useAppContext();
   
+  const {
+    isLoading,
+    payments: currentPayments,
+    processedPayments,
+    allPayments,
+    memberMap,
+    planMap,
+    filters,
+    sortConfig,
+    pagination,
+    kpiData,
+    handleFilterChange,
+    requestSort,
+    handlePageChange,
+  } = usePayments();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [reminderModalData, setReminderModalData] = useState<{ payment: Payment, member: Member } | null>(null);
-  
-  const [filters, setFilters] = useState({ searchTerm: '', status: 'all', startDate: '', endDate: '' });
-  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-
-  const memberMap = useMemo(() => members.reduce((acc, member) => ({ ...acc, [member.id]: member }), {} as Record<string, Member>), [members]);
-  const planMap = useMemo(() => plans.reduce((acc, plan) => ({ ...acc, [plan.id]: plan }), {} as Record<string, Plan>), [plans]);
-
-  const processedPayments = useMemo(() => {
-    const filtered = payments.filter(p => {
-        const memberName = memberMap[p.memberId]?.name || '';
-        const searchMatch = filters.searchTerm === '' || memberName.toLowerCase().includes(filters.searchTerm.toLowerCase()) || (p.description || '').toLowerCase().includes(filters.searchTerm.toLowerCase());
-        const statusMatch = filters.status === 'all' || p.status === filters.status;
-        const startDateMatch = filters.startDate === '' || new Date(new Date(p.date).setHours(0,0,0,0)) >= new Date(new Date(filters.startDate).setHours(0,0,0,0));
-        const endDateMatch = filters.endDate === '' || new Date(new Date(p.date).setHours(0,0,0,0)) <= new Date(new Date(filters.endDate).setHours(0,0,0,0));
-        return searchMatch && statusMatch && startDateMatch && endDateMatch;
-    });
-
-    return filtered.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
-
-        if (sortConfig.key === 'memberName') {
-            aValue = memberMap[a.memberId]?.name || '';
-            bValue = memberMap[b.memberId]?.name || '';
-        } else if (sortConfig.key === 'planName') {
-            aValue = planMap[a.planId]?.name || '';
-            bValue = planMap[b.planId]?.name || '';
-        } else {
-            aValue = a[sortConfig.key as keyof Payment];
-            bValue = b[sortConfig.key as keyof Payment];
-        }
-
-        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-        return 0;
-    });
-  }, [payments, filters, sortConfig, memberMap, planMap]);
-  
-  const totalPages = Math.ceil(processedPayments.length / ITEMS_PER_PAGE);
-  const currentPayments = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return processedPayments.slice(start, end);
-  }, [processedPayments, currentPage]);
-
-  const kpiData = useMemo(() => {
-    return processedPayments.reduce((acc, p) => {
-        if(p.status === PaymentStatus.Paid) {
-            acc.paid.total += p.amount;
-            acc.paid.count++;
-        } else if (p.status === PaymentStatus.Pending) {
-            acc.pending.total += p.amount;
-            acc.pending.count++;
-        } else if (p.status === PaymentStatus.Overdue) {
-            acc.overdue.total += p.amount;
-            acc.overdue.count++;
-        }
-        return acc;
-    }, {
-        paid: { total: 0, count: 0 },
-        pending: { total: 0, count: 0 },
-        overdue: { total: 0, count: 0 },
-    });
-  }, [processedPayments]);
 
   const statCards = useMemo(() => ([
     { title: "Recebido", value: kpiData.paid.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), count: kpiData.paid.count, icon: <CheckCircleIcon className="w-6 h-6"/> },
@@ -143,18 +94,6 @@ export const PaymentsList: React.FC = () => {
     { title: "Total", value: (kpiData.paid.total + kpiData.pending.total + kpiData.overdue.total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), count: processedPayments.length, icon: <DollarSignIcon className="w-6 h-6"/> }
   ]), [kpiData, processedPayments.length]);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const requestSort = (key: SortableKeys) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
-  
   const handleAddNew = () => { setEditingPayment(null); setIsModalOpen(true); };
   const handleEdit = (payment: Payment) => { setEditingPayment(payment); setIsModalOpen(true); };
   const handleDeleteRequest = (id: string) => { setPaymentToDelete(id); setIsConfirmModalOpen(true); };
@@ -200,7 +139,6 @@ export const PaymentsList: React.FC = () => {
                 <input type="text" name="searchTerm" placeholder="Buscar por aluno ou descrição..." value={filters.searchTerm} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" />
                 <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Status</option>
-                    {/* FIX: Explicitly cast enum value to string for key prop */}
                     {Object.values(PaymentStatus).map(s => <option key={s as string} value={s}>{s}</option>)}
                 </select>
                 <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200" />
@@ -316,18 +254,18 @@ export const PaymentsList: React.FC = () => {
                 ))
             ) : (
                 <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                    {payments.length === 0 ? 'Nenhum pagamento registrado ainda.' : 'Nenhum pagamento encontrado com os filtros aplicados.'}
+                    {allPayments.length === 0 ? 'Nenhum pagamento registrado ainda.' : 'Nenhum pagamento encontrado com os filtros aplicados.'}
                 </div>
             )}
         </div>
       </div>
       
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
         totalItems={processedPayments.length}
-        itemsPerPage={ITEMS_PER_PAGE}
+        itemsPerPage={pagination.ITEMS_PER_PAGE}
       />
 
       {isModalOpen && <PaymentFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} addPayment={addPayment} updatePayment={updatePayment} payment={editingPayment} members={members} plans={plans} />}

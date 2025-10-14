@@ -6,7 +6,8 @@ import { ExpenseFormModal } from './ExpenseFormModal';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { ExpenseStatusBadge } from './ui/Badges';
 import { useAppContext } from '../contexts/AppContext';
-import { ExpenseStatus, Permission } from '../types';
+import { useExpenses } from '../hooks/useExpenses';
+import { Permission } from '../types';
 import { Skeleton } from './ui/Skeleton';
 import { StatCard } from './ui/StatCard';
 import { Pagination } from './ui/Pagination';
@@ -34,38 +35,23 @@ const ExpensesListSkeleton: React.FC = () => (
 );
 
 export const ExpensesList: React.FC = () => {
-  const { expenses, addExpense, updateExpense, deleteExpense, hasPermission, isLoading } = useAppContext();
+  const { addExpense, updateExpense, deleteExpense, hasPermission } = useAppContext();
+
+  const {
+      isLoading,
+      expenses: currentExpenses,
+      filteredExpenses,
+      searchTerm,
+      pagination,
+      financialSummary,
+      handleSearchChange,
+      handlePageChange,
+  } = useExpenses();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-
-  const filteredExpenses = useMemo(() => {
-    return expenses.filter(expense =>
-      expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [expenses, searchTerm]);
-  
-  const totalPages = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE);
-  const currentExpenses = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredExpenses.slice(start, end);
-  }, [filteredExpenses, currentPage]);
-
-  const financialSummary = useMemo(() => {
-    const totalAmount = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const paidAmount = filteredExpenses
-      .filter(expense => expense.status === ExpenseStatus.Paid)
-      .reduce((sum, expense) => sum + expense.amount, 0);
-    const pendingAmount = totalAmount - paidAmount;
-
-    return { totalAmount, paidAmount, pendingAmount };
-  }, [filteredExpenses]);
 
   const statCards = useMemo(() => ([
     {
@@ -124,7 +110,7 @@ export const ExpensesList: React.FC = () => {
               type="text"
               placeholder="Buscar despesas..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full sm:w-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
             />
             {hasPermission(Permission.CREATE_EXPENSES) && (
@@ -192,10 +178,10 @@ export const ExpensesList: React.FC = () => {
                           <div className="text-center py-16">
                               <ReceiptIcon className="mx-auto h-12 w-12 text-gray-400" />
                               <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-200">
-                                  {expenses.length === 0 ? 'Nenhuma despesa registrada' : 'Nenhuma despesa encontrada'}
+                                  {filteredExpenses.length === 0 && searchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa registrada'}
                               </h3>
                               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                  {expenses.length === 0 ? 'Adicione sua primeira despesa para começar.' : 'Tente buscar por outro termo.'}
+                                  {filteredExpenses.length === 0 && searchTerm ? 'Tente buscar por outro termo.' : 'Adicione sua primeira despesa para começar.'}
                               </p>
                           </div>
                       </td>
@@ -253,10 +239,10 @@ export const ExpensesList: React.FC = () => {
                   <div className="text-center py-10">
                       <ReceiptIcon className="mx-auto h-12 w-12 text-gray-400" />
                       <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-200">
-                          {expenses.length === 0 ? 'Nenhuma despesa registrada' : 'Nenhuma despesa encontrada'}
+                           {filteredExpenses.length === 0 && searchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa registrada'}
                       </h3>
                       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                          {expenses.length === 0 ? 'Adicione sua primeira despesa para começar.' : 'Tente buscar por outro termo.'}
+                           {filteredExpenses.length === 0 && searchTerm ? 'Tente buscar por outro termo.' : 'Adicione sua primeira despesa para começar.'}
                       </p>
                   </div>
               )}
@@ -264,11 +250,11 @@ export const ExpensesList: React.FC = () => {
       </div>
       
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
         totalItems={filteredExpenses.length}
-        itemsPerPage={ITEMS_PER_PAGE}
+        itemsPerPage={pagination.ITEMS_PER_PAGE}
       />
       
       {isModalOpen && (

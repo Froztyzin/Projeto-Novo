@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Member, Plan, Payment } from '../types';
 import { useAppContext } from '../contexts/AppContext';
-import { useToast } from '../contexts/ToastContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
 import { LogOutIcon, UserCircleIcon, CreditCardIcon, PackageIcon, DumbbellIcon } from './ui/Icons';
 import { MemberStatus, PaymentStatus } from '../types';
@@ -201,7 +201,8 @@ const MemberProfile: React.FC<{ member: Member }> = ({ member }) => {
 
 export const MemberPortal: React.FC = () => {
     const [view, setView] = useState<MemberView>('plan');
-    const { currentMember, logout, plans, payments, logo } = useAppContext();
+    const { currentMember, logout, plans, payments } = useAppContext();
+    const { logo } = useSettings();
 
     if (!currentMember) {
         return (

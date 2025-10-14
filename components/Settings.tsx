@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useAppContext, BillingRulerSettings } from '../contexts/AppContext';
+import { useAppContext } from '../contexts/AppContext';
+import { useSettings, BillingRulerSettings } from '../contexts/SettingsContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui/Button';
 import { ConfirmationModal } from './ui/ConfirmationModal';
@@ -63,11 +64,11 @@ const InfoItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, 
 
 
 export const Settings: React.FC = () => {
-    const { 
-        importData, roles, currentUser, hasPermission, isLoading,
+    const { importData, roles, currentUser, hasPermission, isLoading } = useAppContext();
+    const {
         logo: contextLogo, primaryColor: contextPrimaryColor, billingRulerSettings: contextBillingSettings,
         updateLogo, updatePrimaryColor, updateBillingRulerSettings
-    } = useAppContext();
+    } = useSettings();
     const { addToast } = useToast();
 
     // Local state for settings

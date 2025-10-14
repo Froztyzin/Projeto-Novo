@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+// FIX: Replaced `useData` and `useAuth` with `useAppContext` as they do not exist.
 import { useAppContext } from '../contexts/AppContext';
 import { LogActionType } from '../types';
 import { Skeleton } from './ui/Skeleton';
@@ -63,7 +64,7 @@ const actionIcons: Record<LogActionType, React.ReactNode> = {
 };
 
 export const AuditLogList: React.FC = () => {
-  const { auditLogs, users, isLoading } = useAppContext();
+  const { auditLogs, isLoading, users } = useAppContext();
   const [filters, setFilters] = useState({ userId: 'all', startDate: '', endDate: '' });
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 15;

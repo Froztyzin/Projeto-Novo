@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { useAppContext } from '../contexts/AppContext';
-import type { Member, Plan, Payment } from '../types';
+import { useMembers } from '../hooks/useMembers';
+import type { Member, Plan } from '../types';
 import { MemberStatus, Permission } from '../types';
 import { MemberStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
@@ -12,10 +13,7 @@ import { Pagination } from './ui/Pagination';
 import { Avatar } from './ui/Avatar';
 import { useToast } from '../contexts/ToastContext';
 import { AIReengagementModal } from './AIReengagementModal';
-
-interface MembersListProps {
-  openMemberDetails: (member: Member) => void;
-}
+import { LayoutContext } from './router/Layout';
 
 const MembersListSkeleton: React.FC = () => (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
@@ -52,47 +50,42 @@ const StatCard: React.FC<{ title: string; value: number | string; icon: React.Re
   </div>
 );
 
-export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) => {
-  const { members, plans, payments, addMember, updateMember, deleteMember, hasPermission, isLoading, requestPasswordResetForMember } = useAppContext();
+export const MembersList: React.FC = () => {
+  const { plans, addMember, updateMember, deleteMember, hasPermission, requestPasswordResetForMember } = useAppContext();
   const { addToast } = useToast();
+  const layoutContext = useContext(LayoutContext);
+
+  if (!layoutContext) {
+    throw new Error("MembersList must be used within a Layout provider");
+  }
+  const { openMemberDetails } = layoutContext;
+  
+  const {
+      isLoading,
+      members: currentMembers,
+      allMembers,
+      filteredMembers,
+      filters,
+      pagination,
+      handleSearchChange,
+      handleStatusChange,
+      handlePlanChange,
+      handlePageChange,
+      clearFilters,
+  } = useMembers();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<MemberStatus | 'all'>('all');
-  const [planFilter, setPlanFilter] = useState<string>('all');
-    
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<string | null>(null);
   const [reengagementModalData, setReengagementModalData] = useState<{ member: Member, plan: Plan | null } | null>(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
-
   const stats = useMemo(() => ([
-    { title: "Total de Alunos", value: members.length, icon: <UsersIcon className="h-5 w-5"/> },
-    { title: "Alunos Ativos", value: members.filter(m => m.status === MemberStatus.Active).length, icon: <UsersIcon className="h-5 w-5"/> },
-    { title: "Pag. Pendente", value: members.filter(m => m.status === MemberStatus.Pending).length, icon: <UsersIcon className="h-5 w-5"/> },
-    { title: "Alunos Inativos", value: members.filter(m => m.status === MemberStatus.Inactive).length, icon: <UsersIcon className="h-5 w-5"/> },
-  ]), [members]);
-
-  const filteredMembers = useMemo(() => {
-    return members.filter(member => {
-        const lowerCaseSearch = searchTerm.toLowerCase();
-        const searchMatch = member.name.toLowerCase().includes(lowerCaseSearch) ||
-                            member.email.toLowerCase().includes(lowerCaseSearch) ||
-                            (member.telefone || '').replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''));
-        const statusMatch = statusFilter === 'all' || member.status === statusFilter;
-        const planMatch = planFilter === 'all' || member.planId === planFilter;
-        return searchMatch && statusMatch && planMatch;
-    });
-  }, [members, searchTerm, statusFilter, planFilter]);
-
-  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
-  const currentMembers = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredMembers.slice(start, end);
-  }, [filteredMembers, currentPage]);
+    { title: "Total de Alunos", value: allMembers.length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Alunos Ativos", value: allMembers.filter(m => m.status === MemberStatus.Active).length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Pag. Pendente", value: allMembers.filter(m => m.status === MemberStatus.Pending).length, icon: <UsersIcon className="h-5 w-5"/> },
+    { title: "Alunos Inativos", value: allMembers.filter(m => m.status === MemberStatus.Inactive).length, icon: <UsersIcon className="h-5 w-5"/> },
+  ]), [allMembers]);
 
   const getPlanName = (planId: string, plans: Plan[]): string => {
     return plans.find(p => p.id === planId)?.name || 'N/A';
@@ -131,16 +124,10 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
     setReengagementModalData({ member, plan: memberPlan });
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setStatusFilter('all');
-    setPlanFilter('all');
-  }
-
   if (isLoading) {
     return <MembersListSkeleton />;
   }
-
+  
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-6">
@@ -166,16 +153,15 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                 <input
                 type="text"
                 placeholder="Buscar por nome, e-mail ou telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={filters.searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="md:col-span-2 lg:col-span-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                 />
-                <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as MemberStatus | 'all')} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                <select value={filters.statusFilter} onChange={e => handleStatusChange(e.target.value as MemberStatus | 'all')} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Status</option>
-                    {/* FIX: Explicitly cast enum value to string for key prop */}
                     {Object.values(MemberStatus).map(s => <option key={s as string} value={s}>{s}</option>)}
                 </select>
-                <select value={planFilter} onChange={e => setPlanFilter(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                <select value={filters.planFilter} onChange={e => handlePlanChange(e.target.value)} className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                     <option value="all">Todos os Planos</option>
                     {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
@@ -246,7 +232,7 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                 ) : (
                     <tr>
                         <td colSpan={5} className="text-center p-8 text-gray-500 dark:text-gray-400">
-                        {members.length === 0 ? 'Nenhum aluno cadastrado ainda.' : 'Nenhum aluno encontrado com os filtros aplicados.'}
+                        {allMembers.length === 0 ? 'Nenhum aluno cadastrado ainda.' : 'Nenhum aluno encontrado com os filtros aplicados.'}
                         </td>
                     </tr>
                 )}
@@ -312,18 +298,18 @@ export const MembersList: React.FC<MembersListProps> = ({ openMemberDetails }) =
                     ))
                 ) : (
                     <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                        {members.length === 0 ? 'Nenhum aluno cadastrado ainda.' : 'Nenhum aluno encontrado com os filtros aplicados.'}
+                        {allMembers.length === 0 ? 'Nenhum aluno cadastrado ainda.' : 'Nenhum aluno encontrado com os filtros aplicados.'}
                     </div>
                 )}
             </div>
       </div>
       
       <Pagination 
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
         totalItems={filteredMembers.length}
-        itemsPerPage={ITEMS_PER_PAGE}
+        itemsPerPage={pagination.ITEMS_PER_PAGE}
       />
       
       {isModalOpen && (

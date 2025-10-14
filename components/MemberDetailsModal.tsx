@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from 'react';
 import type { Member, Plan, Payment } from '../types';
 import { Modal } from './ui/Modal';
@@ -37,119 +38,107 @@ const ChurnRiskBadge: React.FC<{ risk: 'Alto' | 'Médio' | 'Baixo' }> = ({ risk 
     return <span className={`px-2.5 py-1 text-sm font-semibold rounded-full inline-block ${riskClasses[risk]}`}>{risk}</span>;
 }
 
-const AIInsightSection: React.FC<{ insight: MemberInsight | null, isLoading: boolean }> = ({ insight, isLoading }) => {
-    if (isLoading) {
-        return (
-             <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <div className="flex items-center mb-3">
-                    <Skeleton className="h-6 w-6 rounded-full mr-2" />
-                    <Skeleton className="h-5 w-48" />
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-5/6" />
-                </div>
-            </div>
-        )
-    }
+// FIX: Completed the component definition to resolve syntax error and export issue.
+export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, onClose, member, plan, payments, plans }) => {
+    const { getMemberInsights } = useAppContext();
+    const [insight, setInsight] = useState<MemberInsight | null>(null);
+    const [isLoadingInsight, setIsLoadingInsight] = useState(true);
 
-    if (!insight) return null;
+    useEffect(() => {
+        if (isOpen && member) {
+            setIsLoadingInsight(true);
+            getMemberInsights(member, payments, plan)
+                .then(setInsight)
+                .finally(() => setIsLoadingInsight(false));
+        }
+    }, [isOpen, member, payments, plan, getMemberInsights]);
+    
+    const sortedPayments = useMemo(() => {
+        return [...payments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [payments]);
+
+    const getInitials = (nameStr: string) => {
+        if (!nameStr) return '??';
+        const names = nameStr.trim().split(' ').filter(Boolean);
+        if (names.length === 0) return '??';
+        if (names.length > 1) {
+            return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+        }
+        return names[0].substring(0, 2).toUpperCase();
+    };
 
     return (
-        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg animate-fadeIn">
-            <h3 className="text-md font-semibold text-gray-800 dark:text-gray-200 mb-3 flex items-center">
-                <SparklesIcon className="h-5 w-5 mr-2 text-primary-500" />
-                Análise de Risco (IA)
-            </h3>
-            <div className="flex items-center mb-2">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mr-2">Risco de Evasão:</p>
-                <ChurnRiskBadge risk={insight.risk} />
+        <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Aluno">
+            <div className="space-y-6">
+                
+                {/* Member Info */}
+                <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                        <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-primary-600 dark:text-primary-300 font-bold text-2xl">
+                           {getInitials(member.name)}
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{member.name}</h3>
+                        <p className="text-gray-500 dark:text-gray-400">{member.email}</p>
+                    </div>
+                </div>
+
+                {/* AI Insight */}
+                <div className="p-4 bg-slate-800/70 rounded-lg">
+                    <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
+                        <SparklesIcon className="h-5 w-5 mr-2 text-primary-400" />
+                        Análise de Risco (IA)
+                    </h4>
+                    {isLoadingInsight ? (
+                        <Skeleton className="h-16 w-full" />
+                    ) : (
+                        insight && (
+                            <div className="flex items-start space-x-4">
+                                <ChurnRiskBadge risk={insight.risk} />
+                                <p className="text-sm text-gray-600 dark:text-gray-300 flex-1">{insight.analysis}</p>
+                            </div>
+                        )
+                    )}
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    <DetailItem label="Status" value={<MemberStatusBadge status={member.status} />} />
+                    <DetailItem label="Plano Atual" value={plan?.name || 'N/A'} />
+                    <DetailItem label="Data de Inscrição" value={new Date(member.joinDate).toLocaleDateString('pt-BR')} />
+                    <DetailItem label="Telefone" value={member.telefone || 'Não informado'} />
+                </div>
+                
+                {/* Payments History */}
+                <div>
+                    <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Histórico Recente de Pagamentos</h4>
+                    <div className="max-h-48 overflow-y-auto pr-2">
+                        {sortedPayments.length > 0 ? (
+                             <ul className="space-y-2">
+                                {sortedPayments.slice(0, 5).map(p => (
+                                    <li key={p.id} className="flex justify-between items-center p-2 bg-slate-800/70 rounded-md">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{new Date(p.date).toLocaleDateString('pt-BR')}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">{plans.find(pl => pl.id === p.planId)?.name || 'Pagamento'}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{p.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                            <PaymentStatusBadge status={p.status} />
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-4">Nenhum pagamento encontrado.</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                    <Button variant="outline" onClick={onClose}>Fechar</Button>
+                </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 italic">
-                "{insight.analysis}"
-            </p>
-        </div>
-    )
-}
-
-export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, onClose, member, plan, payments, plans }) => {
-  const { getMemberInsights } = useAppContext();
-  const [insight, setInsight] = useState<MemberInsight | null>(null);
-  const [isInsightLoading, setIsInsightLoading] = useState(true);
-
-  useEffect(() => {
-    if (isOpen && member) {
-        setIsInsightLoading(true);
-        setInsight(null);
-        getMemberInsights(member, payments, plan)
-            .then(setInsight)
-            .finally(() => setIsInsightLoading(false));
-    }
-  }, [isOpen, member, payments, plan, getMemberInsights]);
-
-  if (!isOpen) return null;
-
-  const sortedPayments = useMemo(() => 
-    payments.slice().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  , [payments]);
-  
-  const getPlanName = (planId: string) => plans.find(p => p.id === planId)?.name || 'Pagamento Avulso';
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Aluno">
-      <div className="space-y-6">
-        
-        <AIInsightSection insight={insight} isLoading={isInsightLoading} />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <DetailItem label="Nome" value={member.name} />
-          <DetailItem label="E-mail" value={member.email} />
-          <DetailItem label="Telefone" value={member.telefone || 'N/A'} />
-          <DetailItem label="Data de Inscrição" value={new Date(member.joinDate).toLocaleDateString('pt-BR')} />
-          <DetailItem label="Status" value={<MemberStatusBadge status={member.status} />} />
-          <DetailItem label="Plano Atual" value={plan?.name || 'N/A'} />
-          {plan && <DetailItem label="Valor do Plano" value={plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })} />}
-        </div>
-
-        <hr className="border-gray-200 dark:border-gray-700" />
-
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Histórico de Pagamentos</h3>
-          {sortedPayments.length > 0 ? (
-            <div className="max-h-60 overflow-y-auto pr-2">
-                <ul className="space-y-3">
-                {sortedPayments.map(payment => (
-                    <li key={payment.id} className="flex items-start justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div>
-                          <p className="font-semibold text-gray-800 dark:text-gray-100">{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {getPlanName(payment.planId)}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Vencimento: {new Date(payment.date).toLocaleDateString('pt-BR')}
-                          </p>
-                          {payment.paidDate && (
-                            <p className="text-sm text-green-600 dark:text-green-400">
-                                Pago em: {new Date(payment.paidDate).toLocaleDateString('pt-BR')}
-                            </p>
-                          )}
-                      </div>
-                      <div className="flex-shrink-0 ml-4">
-                        <PaymentStatusBadge status={payment.status} />
-                      </div>
-                    </li>
-                ))}
-                </ul>
-            </div>
-          ) : (
-            <p className="text-gray-500 dark:text-gray-400 text-center py-4">Nenhum pagamento encontrado.</p>
-          )}
-        </div>
-        
-        <div className="flex justify-end pt-4">
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
-        </div>
-      </div>
-    </Modal>
-  );
+        </Modal>
+    );
 };

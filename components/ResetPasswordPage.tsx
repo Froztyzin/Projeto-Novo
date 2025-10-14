@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { Button } from './ui/Button';
-import type { AuthView } from '../types';
 import { AuthContainer } from './AuthContainer';
 
-interface ResetPasswordPageProps {
-    setAuthView: (view: AuthView) => void;
-    token: string | null;
-}
-
-export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setAuthView, token }) => {
+export const ResetPasswordPage: React.FC = () => {
+    const { token } = useParams<{ token: string }>();
+    const navigate = useNavigate();
     const { resetMemberPassword } = useAppContext();
     const { addToast } = useToast();
     const [password, setPassword] = useState('');
@@ -41,7 +38,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setAuthVie
 
         if (result.success) {
             addToast(result.message, 'success');
-            setAuthView('memberLogin');
+            navigate('/login');
         } else {
             setError(result.message);
         }
@@ -98,7 +95,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setAuthVie
             </form>
 
              <div className="mt-8 text-center text-sm">
-                <button onClick={() => setAuthView('memberLogin')} className="font-medium text-purple-400 hover:text-purple-300">
+                <button onClick={() => navigate('/login')} className="font-medium text-purple-400 hover:text-purple-300">
                     Voltar para o Login
                 </button>
             </div>

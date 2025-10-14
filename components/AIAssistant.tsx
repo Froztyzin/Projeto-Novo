@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+// FIX: Replaced `useData` with `useAppContext` as DataContext does not exist.
 import { useAppContext } from '../contexts/AppContext';
 import { SparklesIcon, XIcon, SendIcon } from './ui/Icons';
 import { Button } from './ui/Button';

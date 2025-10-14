@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../contexts/AppContext';
+import { usePlans } from '../hooks/usePlans';
 import type { Plan } from '../types';
 import { Permission } from '../types';
 import { Button } from './ui/Button';
@@ -25,21 +26,20 @@ const PlansListSkeleton: React.FC = () => (
 
 
 export const PlansList: React.FC = () => {
-  const { plans, addPlan, updatePlan, deletePlan, hasPermission, isLoading } = useAppContext();
+  const { addPlan, updatePlan, deletePlan, hasPermission } = useAppContext();
+  
+  const {
+      isLoading,
+      plans: currentPlans,
+      allPlans,
+      pagination,
+      handlePageChange,
+  } = usePlans();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [planToDelete, setPlanToDelete] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 6;
-
-  const totalPages = Math.ceil(plans.length / ITEMS_PER_PAGE);
-  const currentPlans = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return plans.slice(start, end);
-  }, [plans, currentPage]);
-
 
   const handleEdit = (plan: Plan) => {
     setEditingPlan(plan);
@@ -118,18 +118,18 @@ export const PlansList: React.FC = () => {
               <PackageIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-200">Nenhum plano cadastrado</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {plans.length === 0 ? "Comece adicionando um novo plano de matrícula." : "Nenhum plano encontrado."}
+                {allPlans.length === 0 ? "Comece adicionando um novo plano de matrícula." : "Nenhum plano encontrado."}
               </p>
           </div>
         )}
       </div>
 
       <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        totalItems={plans.length}
-        itemsPerPage={ITEMS_PER_PAGE}
+        currentPage={pagination.currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
+        totalItems={allPlans.length}
+        itemsPerPage={pagination.ITEMS_PER_PAGE}
       />
 
       {isModalOpen && (

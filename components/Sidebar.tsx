@@ -1,61 +1,60 @@
 import React from 'react';
+import { NavLink as RouterNavLink } from 'react-router-dom';
 import type { ViewType } from '../types';
 import { Permission } from '../types';
 import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon, DumbbellIcon } from './ui/Icons';
 import { useAppContext } from '../contexts/AppContext';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface SidebarProps {
-  currentView: ViewType;
-  setView: (view: ViewType) => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
 const NavLink: React.FC<{
+  to: string;
   icon: React.ReactNode;
   label: string;
-  isActive: boolean;
   onClick: () => void;
   isLogout?: boolean;
-}> = ({ icon, label, isActive, onClick, isLogout = false }) => (
-  <a
-    href="#"
-    onClick={(e) => {
-      e.preventDefault();
-      onClick();
-    }}
-    className={`flex items-center px-4 py-3 text-lg rounded-lg transition-all duration-200 group ${
-      isActive
-        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg'
-        : isLogout
-        ? 'text-red-400 hover:bg-red-500/10'
-        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-    }`}
+}> = ({ to, icon, label, onClick, isLogout = false }) => (
+  <RouterNavLink
+    to={to}
+    onClick={onClick}
+    className={({ isActive }) =>
+      `flex items-center px-4 py-3 text-lg rounded-lg transition-all duration-200 group ${
+        isActive
+          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg'
+          : isLogout
+          ? 'text-red-400 hover:bg-red-500/10'
+          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+      }`
+    }
   >
     {icon}
     <span className="ml-4">{label}</span>
-  </a>
+  </RouterNavLink>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, setIsOpen }) => {
-  const { hasPermission, logout, logo } = useAppContext();
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const { hasPermission, logout } = useAppContext();
+  const { logo } = useSettings();
   
-  const handleNavigation = (view: ViewType) => {
-    setView(view);
+  const handleNavigation = () => {
     setIsOpen(false);
   };
   
   const navItems = [
-    { view: 'dashboard', label: 'Painel', icon: <DashboardIcon className="h-6 w-6" />, permissions: [Permission.VIEW_DASHBOARD] },
-    { view: 'members', label: 'Alunos', icon: <UsersIcon className="h-6 w-6" />, permissions: [Permission.VIEW_MEMBERS] },
-    { view: 'plans', label: 'Planos', icon: <PackageIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PLANS] },
-    { view: 'payments', label: 'Pagamentos', icon: <CreditCardIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PAYMENTS] },
-    { view: 'expenses', label: 'Despesas', icon: <ReceiptIcon className="h-6 w-6" />, permissions: [Permission.VIEW_EXPENSES] },
-    { view: 'reports', label: 'Relatórios', icon: <BarChartIcon className="h-6 w-6" />, permissions: [Permission.VIEW_REPORTS] },
-    { view: 'calendar', label: 'Calendário', icon: <CalendarIcon className="h-6 w-6" />, permissions: [Permission.VIEW_CALENDAR] },
-    { view: 'users', label: 'Usuários', icon: <UserCogIcon className="h-6 w-6" />, permissions: [Permission.VIEW_USERS] },
-    { view: 'audit-log', label: 'Registro de Atividades', icon: <HistoryIcon className="h-6 w-6" />, permissions: [Permission.VIEW_AUDIT_LOG] },
-    { view: 'settings', label: 'Configurações', icon: <SettingsIcon className="h-6 w-6" />, permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
+    { to: '/dashboard', label: 'Painel', icon: <DashboardIcon className="h-6 w-6" />, permissions: [Permission.VIEW_DASHBOARD] },
+    { to: '/members', label: 'Alunos', icon: <UsersIcon className="h-6 w-6" />, permissions: [Permission.VIEW_MEMBERS] },
+    { to: '/plans', label: 'Planos', icon: <PackageIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PLANS] },
+    { to: '/payments', label: 'Pagamentos', icon: <CreditCardIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PAYMENTS] },
+    { to: '/expenses', label: 'Despesas', icon: <ReceiptIcon className="h-6 w-6" />, permissions: [Permission.VIEW_EXPENSES] },
+    { to: '/reports', label: 'Relatórios', icon: <BarChartIcon className="h-6 w-6" />, permissions: [Permission.VIEW_REPORTS] },
+    { to: '/calendar', label: 'Calendário', icon: <CalendarIcon className="h-6 w-6" />, permissions: [Permission.VIEW_CALENDAR] },
+    { to: '/users', label: 'Usuários', icon: <UserCogIcon className="h-6 w-6" />, permissions: [Permission.VIEW_USERS] },
+    { to: '/audit-log', label: 'Registro de Atividades', icon: <HistoryIcon className="h-6 w-6" />, permissions: [Permission.VIEW_AUDIT_LOG] },
+    { to: '/settings', label: 'Configurações', icon: <SettingsIcon className="h-6 w-6" />, permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
   ];
     
   return (
@@ -87,20 +86,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView, isOpen, 
               .filter(item => item.permissions.some(p => hasPermission(p)))
               .map(item => (
                 <NavLink
-                  key={item.view}
+                  key={item.to}
+                  to={item.to}
                   icon={item.icon}
                   label={item.label}
-                  isActive={currentView === item.view}
-                  onClick={() => handleNavigation(item.view as ViewType)}
+                  onClick={handleNavigation}
                 />
               ))}
           </nav>
         </div>
         <div className="mt-auto">
            <NavLink
+              to="/login"
               icon={<LogOutIcon className="h-6 w-6" />}
               label="Sair"
-              isActive={false}
               isLogout={true}
               onClick={logout}
             />

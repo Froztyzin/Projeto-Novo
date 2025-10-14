@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import type { Payment, Member, Plan } from '../types';
 import { PaymentStatus } from '../types';
@@ -141,10 +142,11 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({ isOpen, onCl
           <input type="date" name="date" id="date" value={formData.date} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700" />
         </div>
         <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</p>
+          <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
           <select name="status" id="status" value={formData.status} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+            {/* FIX: Explicitly cast enum value to string for key prop */}
             {Object.values(PaymentStatus).map(status => (
-              <option key={status} value={status}>{status}</option>
+              <option key={status as string} value={status}>{status}</option>
             ))}
           </select>
         </div>
@@ -155,7 +157,7 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({ isOpen, onCl
           </div>
         )}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição (Opcional)</p>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Descrição (Opcional)</label>
           <input type="text" name="description" id="description" value={formData.description} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700" />
         </div>
 

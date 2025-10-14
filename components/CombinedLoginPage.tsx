@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 import { Button } from './ui/Button';
-import type { AuthView } from '../types';
 import { AuthContainer } from './AuthContainer';
 import { ShieldCheckIcon, GraduationCapIcon } from './ui/Icons';
 
-interface CombinedLoginPageProps {
-    setAuthView: (view: AuthView) => void;
-}
-
 type LoginMode = 'admin' | 'member';
 
-export const CombinedLoginPage: React.FC<CombinedLoginPageProps> = ({ setAuthView }) => {
+export const CombinedLoginPage: React.FC = () => {
     const { login, loginMember } = useAppContext();
+    const navigate = useNavigate();
     const [mode, setMode] = useState<LoginMode>('admin');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -38,6 +35,13 @@ export const CombinedLoginPage: React.FC<CombinedLoginPageProps> = ({ setAuthVie
         setIsLoading(false);
         if (!result.success) {
             setError(result.message || 'Ocorreu um erro desconhecido.');
+        } else {
+            // Navega para a rota apropriada após o login
+            if (mode === 'admin') {
+                navigate('/dashboard');
+            } else {
+                navigate('/portal');
+            }
         }
     };
 
@@ -45,7 +49,7 @@ export const CombinedLoginPage: React.FC<CombinedLoginPageProps> = ({ setAuthVie
         admin: {
             title: 'Área Administrativa',
             subtitle: 'Acesso para funcionários e administradores',
-            emailPlaceholder: 'admin@academia.com',
+            emailPlaceholder: 'admin@elite.com',
             buttonText: 'Acessar Sistema',
         },
         member: {
@@ -106,7 +110,7 @@ export const CombinedLoginPage: React.FC<CombinedLoginPageProps> = ({ setAuthVie
                            {mode === 'member' && (
                                 <button 
                                     type="button" 
-                                    onClick={() => setAuthView('requestReset')} 
+                                    onClick={() => navigate('/request-reset')} 
                                     className="text-xs font-medium text-purple-400 hover:text-purple-300"
                                 >
                                     Esqueceu sua senha?
