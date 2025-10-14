@@ -8,6 +8,7 @@ import { MemberStatus, PaymentStatus } from '../types';
 import { MemberStatusBadge, PaymentStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
 import { applyPhoneMask } from '../utils';
+import { PaymentMethodModal } from './PaymentMethodModal';
 
 type MemberView = 'plan' | 'payments' | 'profile';
 
@@ -23,7 +24,7 @@ const MemberHeader: React.FC<{ member: Member, onLogout: () => void, logo: strin
                             <DumbbellIcon className="h-6 w-6 text-white" />
                         </div>
                         <h1 className="text-xl font-bold tracking-tight text-slate-100">
-                            Elite Corpus
+                            Elitte Corpus
                         </h1>
                     </div>
                 )}
@@ -117,35 +118,69 @@ const MemberPlan: React.FC<{ member: Member, plan: Plan | null, payments: Paymen
     );
 };
 
-const MemberPayments: React.FC<{ payments: Payment[], plans: Plan[] }> = ({ payments, plans }) => (
-    <Card className="animate-fadeIn">
-        <CardHeader>
-            <CardTitle>Histórico de Pagamentos</CardTitle>
-            <CardDescription>Acompanhe todos os seus pagamentos.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {payments.length > 0 ? (
-                <ul className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                    {payments.map(p => (
-                        <li key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-slate-800/70 rounded-lg">
-                            <div>
-                                <p className="font-semibold text-slate-100">{plans.find(pl => pl.id === p.planId)?.name || p.description || 'Pagamento'}</p>
-                                <p className="text-sm text-slate-400">Vencimento: {new Date(p.date).toLocaleDateString('pt-BR')}</p>
-                                {p.paidDate && <p className="text-sm text-primary-400">Pago em: {new Date(p.paidDate).toLocaleDateString('pt-BR')}</p>}
-                            </div>
-                            <div className="flex items-center mt-2 sm:mt-0">
-                                <p className="font-bold text-lg text-slate-100 mr-4">{p.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                                <PaymentStatusBadge status={p.status} />
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-center text-slate-400 py-8">Nenhum pagamento encontrado.</p>
+const MemberPayments: React.FC<{ payments: Payment[], plans: Plan[], updatePayment: (payment: Payment) => void }> = ({ payments, plans, updatePayment }) => {
+    const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+
+    const handleConfirmPayment = () => {
+        if (selectedPayment) {
+            updatePayment({
+                ...selectedPayment,
+                status: PaymentStatus.Paid,
+                paidDate: new Date(),
+            });
+            setSelectedPayment(null);
+        }
+    };
+    
+    return (
+        <>
+            <Card className="animate-fadeIn">
+                <CardHeader>
+                    <CardTitle>Histórico de Pagamentos</CardTitle>
+                    <CardDescription>Acompanhe e realize seus pagamentos.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {payments.length > 0 ? (
+                        <ul className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            {payments.map(p => (
+                                <li key={p.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-slate-800/70 rounded-lg">
+                                    <div>
+                                        <p className="font-semibold text-slate-100">{plans.find(pl => pl.id === p.planId)?.name || p.description || 'Pagamento'}</p>
+                                        <p className="text-sm text-slate-400">Vencimento: {new Date(p.date).toLocaleDateString('pt-BR')}</p>
+                                        {p.paidDate && <p className="text-sm text-primary-400">Pago em: {new Date(p.paidDate).toLocaleDateString('pt-BR')}</p>}
+                                    </div>
+                                    <div className="flex items-center mt-2 sm:mt-0">
+                                        <p className="font-bold text-lg text-slate-100 mr-4">{p.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                                        <PaymentStatusBadge status={p.status} />
+                                        {(p.status === PaymentStatus.Pending || p.status === PaymentStatus.Overdue) && (
+                                            <Button 
+                                                size="sm" 
+                                                className="ml-4"
+                                                onClick={() => setSelectedPayment(p)}
+                                            >
+                                                Pagar Agora
+                                            </Button>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-center text-slate-400 py-8">Nenhum pagamento encontrado.</p>
+                    )}
+                </CardContent>
+            </Card>
+            {selectedPayment && (
+                <PaymentMethodModal
+                    isOpen={!!selectedPayment}
+                    onClose={() => setSelectedPayment(null)}
+                    onConfirm={handleConfirmPayment}
+                    payment={selectedPayment}
+                />
             )}
-        </CardContent>
-    </Card>
-);
+        </>
+    );
+};
 
 const MemberProfile: React.FC<{ member: Member }> = ({ member }) => {
     const { updateCurrentMemberProfile } = useAppContext();
@@ -201,7 +236,7 @@ const MemberProfile: React.FC<{ member: Member }> = ({ member }) => {
 
 export const MemberPortal: React.FC = () => {
     const [view, setView] = useState<MemberView>('plan');
-    const { currentMember, logout, plans, payments } = useAppContext();
+    const { currentMember, logout, plans, payments, updatePayment } = useAppContext();
     const { logo } = useSettings();
 
     if (!currentMember) {
@@ -218,7 +253,7 @@ export const MemberPortal: React.FC = () => {
     const renderView = () => {
         switch (view) {
             case 'plan': return <MemberPlan member={currentMember} plan={memberPlan} payments={memberPayments} />;
-            case 'payments': return <MemberPayments payments={memberPayments} plans={plans} />;
+            case 'payments': return <MemberPayments payments={memberPayments} plans={plans} updatePayment={updatePayment} />;
             case 'profile': return <MemberProfile member={currentMember} />;
             default: return null;
         }

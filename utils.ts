@@ -1,4 +1,3 @@
-
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 
@@ -46,6 +45,22 @@ export const applyPhoneMask = (value: string): string => {
     value = value.replace(/(\d)(\d{4})$/,"$1-$2");
     return value.slice(0, 15);
 };
+
+export const applyCreditCardMask = (value: string): string => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{4})/g, '$1 ')
+    .trim()
+    .slice(0, 19);
+};
+
+export const applyExpiryDateMask = (value: string): string => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1/$2')
+    .slice(0, 5);
+};
+
 
 export const markdownToHtml = (markdown: string): string => {
     if (typeof window === 'undefined') {

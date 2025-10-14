@@ -20,7 +20,7 @@ export const CreditCardIcon = createIconWithPaths(["M22 12v4a2 2 0 0 1-2 2H4a2 2
 export const LogOutIcon = createIconWithPaths(["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"]);
 export const UserCogIcon = createIconWithPaths(["M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", "M8.5 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z", "M18 18m-3 0a3 3 0 1 0 6 0 3 3 0 1 0-6 0", "M20.8 15.6l-1.3 1.3", "m-2.8 2.8 1.3-1.3", "M18 21v-1.5", "M18 15v1.5", "M20.1 16.5l1.3-1.3", "m-2.8 2.8-1.3 1.3", "M15.9 16.5l-1.3-1.3", "m2.8-2.8 1.3 1.3"]);
 export const HistoryIcon = createIconWithPaths(["M1 4v6h6", "M3.51 15a9 9 0 1 0 2.19-9.51L1 10"]);
-export const DumbbellIcon = createIconWithPaths(["M8 8l-2.05 2.05a6 6 0 0 0 0 8.5L8 20", "M16 8l2.05 2.05a6 6 0 0 1 0 8.5L16 20", "m-6 0h4", "m-12-6h4", "m4 0h4", "m4 0h4", "M14 16l-1-1", "M10 16l-1-1", "m0-6 1-1", "m4 0 1-1"]);
+export const DumbbellIcon = createIconWithPaths(["M12 2L4 5v6c0 5.55 3.58 10.42 8 11.92C16.42 21.42 20 16.55 20 11V5l-8-3z", "M15 9H9v6h6", "M9 12h4"]);
 export const DollarSignIcon = createIconWithPaths(["M12 1v22", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"]);
 export const UsersRoundIcon = createIconWithPaths(["M10 16v-2a3 3 0 0 0-3-3H4a3 3 0 0 0-3 3v2", "M7.5 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z", "M18 16v-2a3 3 0 0 0-3-3h-1", "M14.5 4a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"]);
 export const AlertTriangleIcon = createIconWithPaths(["M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z", "M12 9v4", "M12 17h.01"]);
@@ -48,3 +48,9 @@ export const BellIcon = createIconWithPaths(["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18
 export const TrendingUpIcon = createIcon("M23 6l-9.5 9.5-5-5L1 18");
 export const ArrowUp = createIcon("M12 5l-7 7h14z");
 export const ArrowDown = createIcon("M12 19l7-7H5z");
+export const BarcodeIcon = createIconWithPaths(["M3 6h18v2H3z","M3 10h18v2H3z","M3 14h18v2H3z","M3 18h18v2H3z"]);
+export const PixIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <path d="M14.6,15.76l-1.12-1.13a1.7,1.7,0,0,0-2.41,0L9.94,15.76a1.71,1.71,0,0,0,0,2.41l1.13,1.13a1.71,1.71,0,0,0,2.41,0l1.12-1.13A1.71,1.71,0,0,0,14.6,15.76ZM5.09,8.24l1.13-1.13a1.71,1.71,0,0,1,2.41,0L9.76,8.24a1.71,1.71,0,0,1,0,2.41L8.63,11.78a1.71,1.71,0,0,1-2.41,0L5.09,10.65A1.71,1.71,0,0,1,5.09,8.24Zm9.51,0L13.47,7.11a1.7,1.7,0,0,0-2.41,0L9.94,8.24a1.71,1.71,0,0,0,0,2.41l1.13,1.13a1.71,1.71,0,0,0,2.41,0l1.12-1.13A1.71,1.71,0,0,0,14.6,8.24ZM9.94,4.67a1.71,1.71,0,0,0,1.2-.5L12.27,3a1.71,1.71,0,0,0,0-2.41,1.71,1.71,0,0,0-2.41,0l-1.12,1.13a1.71,1.71,0,0,0,0,2.41A1.71,1.71,0,0,0,9.94,4.67Z"/>
+    </svg>
+);

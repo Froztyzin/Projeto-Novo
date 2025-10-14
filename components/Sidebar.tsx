@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import type { ViewType } from '../types';
@@ -73,7 +74,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
                       <DumbbellIcon className="h-7 w-7 text-white" />
                   </div>
                   <h1 className="text-2xl font-bold tracking-tight text-slate-100">
-                      Elite Corpus
+                      Elitte Corpus
                   </h1>
               </div>
             )}

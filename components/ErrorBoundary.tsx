@@ -10,8 +10,6 @@ interface State {
   hasError: boolean;
 }
 
-// FIX: Switched to extending React.Component directly to ensure consistent
-// type inference for component props across different environments.
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
   state: State = { hasError: false };
 
@@ -46,9 +44,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
       );
     }
 
-    // FIX: Destructuring `this.props` to ensure `children` is correctly resolved, as direct access was causing a type error.
-    const { children } = this.props;
-    return children;
+    // FIX: Correctly return `this.props.children` to render child components when no error has occurred.
+    return this.props.children;
   }
 }
 

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DumbbellIcon } from './ui/Icons';
 
@@ -12,7 +13,7 @@ const Logo: React.FC = () => (
         </div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-100">
             <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                Elite Corpus
+                Elitte Corpus
             </span>{' '}
             Academia
         </h1>
