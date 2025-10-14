@@ -21,8 +21,14 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const addNotification = useCallback((title: string, message: string) => {
-    const id = Date.now();
-    setNotifications(current => [{ id, title, message, read: false }, ...current]);
+    const id = Date.now() + Math.random(); // Add random to avoid collision
+    setNotifications(current => {
+        // Prevent duplicate messages
+        if (current.some(n => n.title === title && n.message === message)) {
+            return current;
+        }
+        return [{ id, title, message, read: false }, ...current];
+    });
   }, []);
 
   const markAsRead = useCallback((id: number) => {

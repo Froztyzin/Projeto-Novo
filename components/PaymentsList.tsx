@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Payment, Member } from '../types';
 import { Button } from './ui/Button';
-import { PlusCircleIcon, EditIcon, TrashIcon, CreditCardIcon, DollarSignIcon, AlertTriangleIcon, CheckCircleIcon, SparklesIcon } from './ui/Icons';
+import { PlusCircleIcon, EditIcon, TrashIcon, CreditCardIcon, DollarSignIcon, AlertTriangleIcon, CheckCircleIcon, SparklesIcon, HistoryIcon } from './ui/Icons';
 import { ConfirmationModal } from './ui/ConfirmationModal';
 import { PaymentStatusBadge } from './ui/Badges';
 import { PaymentFormModal } from './PaymentFormModal';
@@ -63,7 +63,7 @@ const StatCard: React.FC<{ title: string; value: string; count: number; icon: Re
 type SortableKeys = keyof Payment | 'memberName' | 'planName';
 
 export const PaymentsList: React.FC = () => {
-  const { members, plans, addPayment, updatePayment, deletePayment, hasPermission } = useAppContext();
+  const { members, plans, addPayment, updatePayment, deletePayment, hasPermission, runAutomatedBillingCycle } = useAppContext();
   
   const {
     isLoading,
@@ -86,6 +86,7 @@ export const PaymentsList: React.FC = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [reminderModalData, setReminderModalData] = useState<{ payment: Payment, member: Member } | null>(null);
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
 
   const statCards = useMemo(() => ([
     { title: "Recebido", value: kpiData.paid.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), count: kpiData.paid.count, icon: <CheckCircleIcon className="w-6 h-6"/> },
@@ -102,6 +103,16 @@ export const PaymentsList: React.FC = () => {
     setIsConfirmModalOpen(false);
     setPaymentToDelete(null);
   };
+
+  const handleRunBilling = () => {
+    setIsBillingLoading(true);
+    // runAutomatedBillingCycle is synchronous in its current mock implementation
+    runAutomatedBillingCycle();
+    // Simulate a delay to provide feedback even for a quick operation
+    setTimeout(() => {
+        setIsBillingLoading(false);
+    }, 500);
+  };
   
   const renderSortableHeader = (label: string, key: SortableKeys) => (
     <th className="p-4 font-semibold">
@@ -117,7 +128,16 @@ export const PaymentsList: React.FC = () => {
   return (
     <div className="space-y-6">
       {hasPermission(Permission.CREATE_PAYMENTS) && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <Button 
+                onClick={handleRunBilling} 
+                variant="outline"
+                isLoading={isBillingLoading}
+                title="Gera pagamentos recorrentes e atualiza status de vencidos"
+            >
+                <HistoryIcon className="w-5 h-5 mr-2" />
+                Gerar Cobranças
+            </Button>
             <Button onClick={handleAddNew}>
               <PlusCircleIcon className="w-5 h-5 mr-2" />
               Registrar Pagamento

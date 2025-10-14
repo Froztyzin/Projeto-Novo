@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../contexts/AppContext';
 import { useNotifications } from '../../contexts/NotificationContext';
+import { useSettings } from '../../contexts/SettingsContext';
 
 import { Sidebar } from '../Sidebar';
 import { BottomNavBar } from '../BottomNavBar';
@@ -32,8 +33,9 @@ const pathTitleMap: Record<string, string> = {
 };
 
 export const Layout: React.FC = () => {
-    const { plans, payments } = useAppContext();
-    const { unreadCount } = useNotifications();
+    const { plans, payments, isLoading, getSystemNotifications } = useAppContext();
+    const { addNotification, unreadCount } = useNotifications();
+    const { billingRulerSettings } = useSettings();
     const location = useLocation();
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -41,6 +43,16 @@ export const Layout: React.FC = () => {
     const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
     const [isMemberDetailsModalOpen, setMemberDetailsModalOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+    const [notificationsGenerated, setNotificationsGenerated] = useState(false);
+
+    useEffect(() => {
+        if (!isLoading && !notificationsGenerated && getSystemNotifications) {
+            const systemNotifications = getSystemNotifications(billingRulerSettings);
+            systemNotifications.forEach(n => addNotification(n.title, n.message));
+            setNotificationsGenerated(true);
+        }
+    }, [isLoading, notificationsGenerated, getSystemNotifications, billingRulerSettings, addNotification]);
+
 
     const openMemberDetails = (member: Member) => {
         setSelectedMember(member);

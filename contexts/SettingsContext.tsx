@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { generateColorPalette } from '../utils';
 import { useAppContext } from './AppContext';
-// FIX: Added import for LogActionType to be used in addAuditLog calls.
 import { LogActionType } from '../types';
 
 export interface BillingRulerSettings {
@@ -70,21 +69,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       localStorage.removeItem('customLogo');
       setLogo(null);
     }
-    // FIX: Provided the required LogActionType and details string arguments to addAuditLog.
      addAuditLog(LogActionType.UPDATE_SETTINGS, 'Atualizou o logo da academia.');
   }
 
   const updatePrimaryColor = (newColor: string) => {
       localStorage.setItem('primaryColor', newColor);
       setPrimaryColor(newColor);
-      // FIX: Provided the required LogActionType and details string arguments to addAuditLog.
       addAuditLog(LogActionType.UPDATE_SETTINGS, `Alterou a cor primária para ${newColor}.`);
   }
   
   const updateBillingRulerSettings = (settings: BillingRulerSettings) => {
     localStorage.setItem('billingRulerSettings', JSON.stringify(settings));
     setBillingRulerSettings(settings);
-    // FIX: Provided the required LogActionType and details string arguments to addAuditLog.
     addAuditLog(LogActionType.UPDATE_SETTINGS, 'Atualizou as configurações da régua de cobrança.');
   };
 
