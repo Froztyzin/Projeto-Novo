@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Member, Plan } from '../types';
 import { MemberStatus } from '../types';
@@ -77,17 +78,15 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({ isOpen, onClos
     }
   }, [member, plans, isOpen]);
   
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
+    // Run validation to show errors on empty/invalid fields after user leaves them
+    setErrors(validate(formData));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, tagName } = e.target;
-
-    if (tagName === 'SELECT') {
-      setTouched(prev => ({ ...prev, [name]: true }));
-    }
+    const { name, value } = e.target;
 
     let finalValue = value;
     if (name === 'joinDate') {
@@ -99,6 +98,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({ isOpen, onClos
     const updatedFormData = { ...formData, [name]: finalValue };
     
     setFormData(updatedFormData);
+    // Also validate on change for immediate feedback when correcting an error
     setErrors(validate(updatedFormData));
   };
   
@@ -107,6 +107,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({ isOpen, onClos
     const finalErrors = validate();
     setErrors(finalErrors);
     
+    // Mark all fields as touched to show errors on submit
     setTouched({ name: true, email: true, joinDate: true, planId: true, status: true });
 
     const isValid = Object.keys(finalErrors).length === 0;
@@ -157,7 +158,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({ isOpen, onClos
         </div>
         <div>
           <label htmlFor="planId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Plano</label>
-          <select name="planId" id="planId" value={formData.planId} onChange={handleChange} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 ${errors.planId && touched.planId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}>
+          <select name="planId" id="planId" value={formData.planId} onChange={handleChange} onBlur={handleBlur} required className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700 ${errors.planId && touched.planId ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}>
             <option value="" disabled>Selecione um plano</option>
             {plans.map(plan => (
               <option key={plan.id} value={plan.id}>{plan.name} - {plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })}</option>
@@ -167,7 +168,7 @@ export const MemberFormModal: React.FC<MemberFormModalProps> = ({ isOpen, onClos
         </div>
          <div>
           <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-          <select name="status" id="status" value={formData.status} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+          <select name="status" id="status" value={formData.status} onChange={handleChange} onBlur={handleBlur} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
             {/* FIX: Explicitly cast enum value to string for key prop */}
             {Object.values(MemberStatus).map(status => (
               <option key={status as string} value={status}>{status}</option>
