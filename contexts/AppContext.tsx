@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Member, Plan, Payment, Expense, Role, User, AuditLog, Permission } from '../types';
+import type { Member, Plan, Payment, Expense, Role, User, AuditLog, Permission, Announcement } from '../types';
 import { MemberStatus, PaymentStatus, LogActionType } from '../types';
 import { useToast } from './ToastContext';
 import { useMockData } from '../hooks/useMockData';
@@ -11,6 +12,7 @@ interface AppContextType {
   payments: Payment[];
   expenses: Expense[];
   auditLogs: AuditLog[];
+  announcements: Announcement[];
   isAuthenticated: boolean;
   currentUser: User | null;
   isAuthenticatedMember: boolean;
@@ -42,6 +44,9 @@ interface AppContextType {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateExpense: (updatedExpense: Expense) => void;
   deleteExpense: (expenseId: string) => void;
+  addAnnouncement: (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'>) => void;
+  updateAnnouncement: (updatedAnnouncement: Announcement) => void;
+  deleteAnnouncement: (announcementId: string) => void;
   importData: (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => void;
   runAutomatedBillingCycle: () => void;
   getAIResponse: (prompt: string) => Promise<string>;
@@ -67,6 +72,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [payments, setPayments] = useState<Payment[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -91,6 +97,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setPayments(paymentsData);
             setExpenses(initialData.expenses);
             setAuditLogs(initialData.auditLogs);
+            setAnnouncements(initialData.announcements);
             setRoles(initialData.roles);
             setUsers(initialData.users);
 
@@ -367,6 +374,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
+    const addAnnouncement = (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'>) => {
+        if (!currentUser) return;
+        const newAnnouncement: Announcement = { 
+            ...announcement, 
+            id: `ann${Date.now()}`,
+            createdAt: new Date(),
+            authorId: currentUser.id
+        };
+        setAnnouncements(prev => [newAnnouncement, ...prev]);
+        addToast('Comunicado publicado com sucesso!', 'success');
+        addAuditLog(LogActionType.CREATE_ANNOUNCEMENT, `Publicou o comunicado: "${newAnnouncement.title}".`);
+    };
+
+    const updateAnnouncement = (updatedAnnouncement: Announcement) => {
+        setAnnouncements(prev => prev.map(a => a.id === updatedAnnouncement.id ? updatedAnnouncement : a));
+        addToast('Comunicado atualizado com sucesso!', 'success');
+        addAuditLog(LogActionType.UPDATE_ANNOUNCEMENT, `Atualizou o comunicado: "${updatedAnnouncement.title}".`);
+    };
+
+    const deleteAnnouncement = (announcementId: string) => {
+        const toDelete = announcements.find(a => a.id === announcementId);
+        setAnnouncements(prev => prev.filter(a => a.id !== announcementId));
+        addToast('Comunicado excluído com sucesso!', 'success');
+        if (toDelete) {
+            addAuditLog(LogActionType.DELETE_ANNOUNCEMENT, `Excluiu o comunicado: "${toDelete.title}".`);
+        }
+    };
+
     const importData = (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => {
         try {
             const parseDates = <T extends { [key: string]: any }>(items: T[], dateKeys: (keyof T)[]) => {
@@ -609,6 +644,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const value = {
         isLoading, members, plans, payments, expenses, auditLogs,
+        announcements, addAnnouncement, updateAnnouncement, deleteAnnouncement,
         isAuthenticated, currentUser, isAuthenticatedMember, currentMember,
         roles, users, hasPermission,
         login, logout, loginMember, updateCurrentMemberProfile,

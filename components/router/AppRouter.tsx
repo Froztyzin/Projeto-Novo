@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -19,6 +20,7 @@ import { CalendarView } from '../CalendarView';
 import { Settings } from '../Settings';
 import { UsersList } from '../UsersList';
 import { AuditLogList } from '../AuditLogList';
+import { Announcements } from '../Announcements';
 
 export const AppRouter: React.FC = () => {
     return (
@@ -42,6 +44,7 @@ export const AppRouter: React.FC = () => {
                     <Route path="plans" element={<PlansList />} />
                     <Route path="payments" element={<PaymentsList />} />
                     <Route path="expenses" element={<ExpensesList />} />
+                    <Route path="announcements" element={<Announcements />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="calendar" element={<CalendarView />} />
                     <Route path="settings" element={<Settings />} />

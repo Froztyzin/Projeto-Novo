@@ -33,6 +33,12 @@ export enum ExpenseCategory {
     Other = 'Outros',
 }
 
+export enum AnnouncementType {
+    Info = 'Informativo',
+    Promotion = 'Promoção',
+    Warning = 'Aviso Urgente',
+}
+
 export enum LogActionType {
     USER_LOGIN = 'Login de Usuário',
     USER_LOGOUT = 'Logout de Usuário',
@@ -56,6 +62,9 @@ export enum LogActionType {
     DELETE_ROLE = 'Exclusão de Função',
     IMPORT_DATA = 'Importação de Dados',
     UPDATE_SETTINGS = 'Atualização de Configurações',
+    CREATE_ANNOUNCEMENT = 'Criação de Comunicado',
+    UPDATE_ANNOUNCEMENT = 'Atualização de Comunicado',
+    DELETE_ANNOUNCEMENT = 'Exclusão de Comunicado',
 }
 
 export enum Permission {
@@ -95,6 +104,11 @@ export enum Permission {
   MANAGE_SETTINGS = 'MANAGE_SETTINGS',
   // Audit Log
   VIEW_AUDIT_LOG = 'VIEW_AUDIT_LOG',
+  // Announcements
+  VIEW_ANNOUNCEMENTS = 'VIEW_ANNOUNCEMENTS',
+  CREATE_ANNOUNCEMENTS = 'CREATE_ANNOUNCEMENTS',
+  UPDATE_ANNOUNCEMENTS = 'UPDATE_ANNOUNCEMENTS',
+  DELETE_ANNOUNCEMENTS = 'DELETE_ANNOUNCEMENTS',
 }
 
 export interface Member {
@@ -136,6 +150,15 @@ export interface Expense {
   date: Date;
   category: ExpenseCategory;
   status?: ExpenseStatus;
+}
+
+export interface Announcement {
+    id: string;
+    title: string;
+    content: string;
+    type: AnnouncementType;
+    createdAt: Date;
+    authorId: string; // User ID
 }
 
 export interface Role {

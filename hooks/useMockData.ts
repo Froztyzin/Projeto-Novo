@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import type { Member, Plan, Payment, Expense, Role, User, AuditLog } from '../types';
-import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType } from '../types';
+import type { Member, Plan, Payment, Expense, Role, User, AuditLog, Announcement } from '../types';
+import { MemberStatus, PaymentStatus, ExpenseCategory, ExpenseStatus, Permission, LogActionType, AnnouncementType } from '../types';
 
 const initialPlans: Plan[] = [
   { id: 'plan1', name: 'Básico Mensal', price: 30, durationInMonths: 1, dueDateDayOfMonth: 5 },
@@ -69,10 +69,16 @@ const initialExpenses: Expense[] = [
     { id: 'exp4', description: 'Anúncios em mídias sociais', amount: 200, date: new Date(new Date().setDate(15)), category: ExpenseCategory.Marketing, status: ExpenseStatus.Paid },
 ];
 
+const initialAnnouncements: Announcement[] = [
+    { id: 'ann1', title: 'Feriado de Corpus Christi', content: 'Prezados alunos,\n\nInformamos que a academia **estará fechada** no dia do feriado de Corpus Christi.\n\nRetornaremos às atividades normais no dia seguinte.\n\nBons treinos!', type: AnnouncementType.Warning, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), authorId: 'user1' },
+    { id: 'ann2', title: 'Promoção: Traga um Amigo!', content: 'Traga um amigo para treinar com você e, se ele se matricular em qualquer um de nossos planos, **você ganha 50% de desconto** na sua próxima mensalidade!\n\nAproveite!', type: AnnouncementType.Promotion, createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), authorId: 'user2' },
+    { id: 'ann3', title: 'Novos Equipamentos na Área de Musculação', content: 'Acabamos de receber novos equipamentos para a área de musculação, incluindo:\n\n*   Leg Press 45º\n*   Cadeira Extensora Nova\n*   Banco Scott\n\nVenha conferir e turbinar o seu treino!', type: AnnouncementType.Info, createdAt: new Date(new Date().setDate(new Date().getDate() - 7)), authorId: 'user2' },
+];
+
 const initialRoles: Role[] = [
     { id: 'role_admin', name: 'Administrador', description: 'Acesso total a todas as funcionalidades do sistema.', permissions: Object.values(Permission), isEditable: false },
-    { id: 'role_manager', name: 'Gerente', description: 'Gerencia alunos, planos, pagamentos e finanças.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.DELETE_MEMBERS, Permission.VIEW_PLANS, Permission.CREATE_PLANS, Permission.UPDATE_PLANS, Permission.DELETE_PLANS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.DELETE_PAYMENTS, Permission.VIEW_EXPENSES, Permission.CREATE_EXPENSES, Permission.UPDATE_EXPENSES, Permission.DELETE_EXPENSES, Permission.VIEW_REPORTS, Permission.VIEW_CALENDAR, Permission.MANAGE_SETTINGS ], isEditable: true },
-    { id: 'role_staff', name: 'Recepcionista', description: 'Acesso para gerenciar alunos e registrar pagamentos.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.VIEW_CALENDAR ], isEditable: true }
+    { id: 'role_manager', name: 'Gerente', description: 'Gerencia alunos, planos, pagamentos e finanças.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.DELETE_MEMBERS, Permission.VIEW_PLANS, Permission.CREATE_PLANS, Permission.UPDATE_PLANS, Permission.DELETE_PLANS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.DELETE_PAYMENTS, Permission.VIEW_EXPENSES, Permission.CREATE_EXPENSES, Permission.UPDATE_EXPENSES, Permission.DELETE_EXPENSES, Permission.VIEW_REPORTS, Permission.VIEW_CALENDAR, Permission.MANAGE_SETTINGS, Permission.VIEW_ANNOUNCEMENTS, Permission.CREATE_ANNOUNCEMENTS, Permission.UPDATE_ANNOUNCEMENTS, Permission.DELETE_ANNOUNCEMENTS ], isEditable: true },
+    { id: 'role_staff', name: 'Recepcionista', description: 'Acesso para gerenciar alunos e registrar pagamentos.', permissions: [ Permission.VIEW_DASHBOARD, Permission.VIEW_MEMBERS, Permission.CREATE_MEMBERS, Permission.UPDATE_MEMBERS, Permission.VIEW_PAYMENTS, Permission.CREATE_PAYMENTS, Permission.UPDATE_PAYMENTS, Permission.VIEW_CALENDAR, Permission.VIEW_ANNOUNCEMENTS ], isEditable: true }
 ];
 
 const initialUsers: User[] = [
@@ -97,8 +103,9 @@ export const useMockData = () => {
         const roles = initialRoles;
         const users = initialUsers;
         const auditLogs = initialAuditLogs;
+        const announcements = initialAnnouncements;
 
-        return { plans, members, payments, expenses, roles, users, auditLogs };
+        return { plans, members, payments, expenses, roles, users, auditLogs, announcements };
     });
 
     return data;

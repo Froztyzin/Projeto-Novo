@@ -1,16 +1,17 @@
+
 import React, { useState, useMemo } from 'react';
 import type { Member, Plan, Payment } from '../types';
 import { useAppContext } from '../contexts/AppContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
-import { LogOutIcon, UserCircleIcon, CreditCardIcon, PackageIcon, DumbbellIcon } from './ui/Icons';
+import { LogOutIcon, UserCircleIcon, CreditCardIcon, PackageIcon, DumbbellIcon, BellIcon } from './ui/Icons';
 import { MemberStatus, PaymentStatus } from '../types';
 import { MemberStatusBadge, PaymentStatusBadge } from './ui/Badges';
 import { Button } from './ui/Button';
-import { applyPhoneMask } from '../utils';
+import { applyPhoneMask, markdownToHtml } from '../utils';
 import { PaymentMethodModal } from './PaymentMethodModal';
 
-type MemberView = 'plan' | 'payments' | 'profile';
+type MemberView = 'plan' | 'payments' | 'profile' | 'announcements';
 
 const MemberHeader: React.FC<{ member: Member, onLogout: () => void, logo: string | null }> = ({ member, onLogout, logo }) => (
     <header className="bg-slate-900 shadow-md border-b border-slate-800">
@@ -46,6 +47,7 @@ const MemberNav: React.FC<{ view: MemberView, setView: (view: MemberView) => voi
     const navItems = [
         { id: 'plan', label: 'Meu Plano', icon: <PackageIcon className="h-5 w-5 mr-2" /> },
         { id: 'payments', label: 'Pagamentos', icon: <CreditCardIcon className="h-5 w-5 mr-2" /> },
+        { id: 'announcements', label: 'Avisos', icon: <BellIcon className="h-5 w-5 mr-2" /> },
         { id: 'profile', label: 'Meu Perfil', icon: <UserCircleIcon className="h-5 w-5 mr-2" /> },
     ];
     return (
@@ -233,10 +235,47 @@ const MemberProfile: React.FC<{ member: Member }> = ({ member }) => {
     );
 };
 
+const MemberAnnouncements: React.FC = () => {
+    const { announcements } = useAppContext();
+
+    const sortedAnnouncements = useMemo(() => {
+        return [...announcements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }, [announcements]);
+
+    return (
+        <Card className="animate-fadeIn">
+            <CardHeader>
+                <CardTitle>Mural de Avisos</CardTitle>
+                <CardDescription>Fique por dentro das últimas novidades da academia.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {sortedAnnouncements.length > 0 ? (
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        {sortedAnnouncements.map(ann => (
+                            <div key={ann.id} className="p-4 bg-slate-800/70 rounded-lg">
+                                <div className="flex justify-between items-baseline">
+                                    <h4 className="font-bold text-lg text-slate-100">{ann.title}</h4>
+                                    <p className="text-xs text-slate-400">{new Date(ann.createdAt).toLocaleDateString('pt-BR')}</p>
+                                </div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-purple-400 mt-1">{ann.type}</p>
+                                <div 
+                                    className="mt-3 text-slate-300 ai-content"
+                                    dangerouslySetInnerHTML={{ __html: markdownToHtml(ann.content) }}
+                                ></div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-center text-slate-400 py-8">Nenhum aviso publicado no momento.</p>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 export const MemberPortal: React.FC = () => {
     const [view, setView] = useState<MemberView>('plan');
-    const { currentMember, logout, plans, payments, updatePayment } = useAppContext();
+    const { currentMember, logout, plans, payments, updatePayment, announcements } = useAppContext();
     const { logo } = useSettings();
 
     if (!currentMember) {
@@ -254,6 +293,7 @@ export const MemberPortal: React.FC = () => {
         switch (view) {
             case 'plan': return <MemberPlan member={currentMember} plan={memberPlan} payments={memberPayments} />;
             case 'payments': return <MemberPayments payments={memberPayments} plans={plans} updatePayment={updatePayment} />;
+            case 'announcements': return <MemberAnnouncements />;
             case 'profile': return <MemberProfile member={currentMember} />;
             default: return null;
         }

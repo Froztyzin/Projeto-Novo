@@ -3,7 +3,7 @@ import React from 'react';
 import { NavLink as RouterNavLink } from 'react-router-dom';
 import type { ViewType } from '../types';
 import { Permission } from '../types';
-import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon, DumbbellIcon } from './ui/Icons';
+import { DashboardIcon, UsersIcon, PackageIcon, ReceiptIcon, XIcon, BarChartIcon, CalendarIcon, SettingsIcon, CreditCardIcon, LogOutIcon, UserCogIcon, HistoryIcon, DumbbellIcon, MegaphoneIcon } from './ui/Icons';
 import { useAppContext } from '../contexts/AppContext';
 import { useSettings } from '../contexts/SettingsContext';
 
@@ -51,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { to: '/plans', label: 'Planos', icon: <PackageIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PLANS] },
     { to: '/payments', label: 'Pagamentos', icon: <CreditCardIcon className="h-6 w-6" />, permissions: [Permission.VIEW_PAYMENTS] },
     { to: '/expenses', label: 'Despesas', icon: <ReceiptIcon className="h-6 w-6" />, permissions: [Permission.VIEW_EXPENSES] },
+    { to: '/announcements', label: 'Comunicados', icon: <MegaphoneIcon className="h-6 w-6" />, permissions: [Permission.VIEW_ANNOUNCEMENTS] },
     { to: '/reports', label: 'Relatórios', icon: <BarChartIcon className="h-6 w-6" />, permissions: [Permission.VIEW_REPORTS] },
     { to: '/calendar', label: 'Calendário', icon: <CalendarIcon className="h-6 w-6" />, permissions: [Permission.VIEW_CALENDAR] },
     { to: '/users', label: 'Usuários', icon: <UserCogIcon className="h-6 w-6" />, permissions: [Permission.VIEW_USERS] },

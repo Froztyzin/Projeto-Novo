@@ -1,23 +1,24 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import * as React from 'react';
 import { Button } from './ui/Button';
 import { AlertTriangleIcon } from './ui/Icons';
 
 interface ErrorBoundaryProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 interface State {
   hasError: boolean;
 }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
-  state: State = { hasError: false };
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
+  // FIX: Replaced constructor with class property for state initialization to resolve typing issues.
+  public state: State = { hasError: false };
 
   static getDerivedStateFromError(_: Error): State {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
   }
 
@@ -44,7 +45,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, State> {
       );
     }
 
-    // FIX: The error "Property 'props' does not exist" was likely due to an inconsistent 'import * as React' statement. By switching to named imports for React components and types, which matches the rest of the application, the type system can correctly identify `this.props` on the component instance.
     return this.props.children;
   }
 }

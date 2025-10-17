@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, createContext } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAppContext } from '../../contexts/AppContext';
@@ -25,6 +26,7 @@ const pathTitleMap: Record<string, string> = {
     '/plans': 'Planos de Matrícula',
     '/payments': 'Controle de Pagamentos',
     '/expenses': 'Despesas',
+    '/announcements': 'Comunicados',
     '/users': 'Gerenciamento de Usuários',
     '/reports': 'Relatórios de Pagamentos',
     '/calendar': 'Calendário de Pagamentos',

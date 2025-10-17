@@ -61,6 +61,10 @@ const actionIcons: Record<LogActionType, React.ReactNode> = {
     [LogActionType.DELETE_ROLE]: <TrashIcon className="h-5 w-5 text-red-500" />,
     [LogActionType.IMPORT_DATA]: <PlusCircleIcon className="h-5 w-5 text-purple-500" />,
     [LogActionType.UPDATE_SETTINGS]: <SettingsIcon className="h-5 w-5 text-yellow-500" />,
+    // FIX: Add missing announcement log action types to the icon map.
+    [LogActionType.CREATE_ANNOUNCEMENT]: <PlusCircleIcon className="h-5 w-5 text-primary-500" />,
+    [LogActionType.UPDATE_ANNOUNCEMENT]: <EditIcon className="h-5 w-5 text-blue-500" />,
+    [LogActionType.DELETE_ANNOUNCEMENT]: <TrashIcon className="h-5 w-5 text-red-500" />,
 };
 
 export const AuditLogList: React.FC = () => {
