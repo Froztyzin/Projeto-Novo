@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { Member, Plan, Payment } from '../types';
 import { useAppContext } from '../contexts/AppContext';

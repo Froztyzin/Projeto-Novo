@@ -1,4 +1,3 @@
-// FIX: The `import * as React` syntax was causing a type resolution issue with `this.props` in the class component, likely due to project-wide tsconfig settings (`esModuleInterop: true`). Changed to the consistent `import React` syntax used across the project.
 import React from 'react';
 import { Button } from './ui/Button';
 import { AlertTriangleIcon } from './ui/Icons';
@@ -12,7 +11,10 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, State> {
-  public state: State = { hasError: false };
+  // FIX: Initialize state using a class property instead of a constructor.
+  // This resolves the errors where `this.state` and `this.props` were not
+  // being correctly recognized on the component instance.
+  state: State = { hasError: false };
 
   static getDerivedStateFromError(_: Error): State {
     return { hasError: true };
