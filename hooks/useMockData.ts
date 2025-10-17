@@ -70,9 +70,9 @@ const initialExpenses: Expense[] = [
 ];
 
 const initialAnnouncements: Announcement[] = [
-    { id: 'ann1', title: 'Feriado de Corpus Christi', content: 'Prezados alunos,\n\nInformamos que a academia **estará fechada** no dia do feriado de Corpus Christi.\n\nRetornaremos às atividades normais no dia seguinte.\n\nBons treinos!', type: AnnouncementType.Warning, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), authorId: 'user1' },
-    { id: 'ann2', title: 'Promoção: Traga um Amigo!', content: 'Traga um amigo para treinar com você e, se ele se matricular em qualquer um de nossos planos, **você ganha 50% de desconto** na sua próxima mensalidade!\n\nAproveite!', type: AnnouncementType.Promotion, createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), authorId: 'user2' },
-    { id: 'ann3', title: 'Novos Equipamentos na Área de Musculação', content: 'Acabamos de receber novos equipamentos para a área de musculação, incluindo:\n\n*   Leg Press 45º\n*   Cadeira Extensora Nova\n*   Banco Scott\n\nVenha conferir e turbinar o seu treino!', type: AnnouncementType.Info, createdAt: new Date(new Date().setDate(new Date().getDate() - 7)), authorId: 'user2' },
+    { id: 'ann1', title: 'Feriado de Corpus Christi', content: 'Prezados alunos,\n\nInformamos que a academia **estará fechada** no dia do feriado de Corpus Christi.\n\nRetornaremos às atividades normais no dia seguinte.\n\nBons treinos!', type: AnnouncementType.Warning, createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), authorId: 'user1', readByMemberIds: ['mem1'] },
+    { id: 'ann2', title: 'Promoção: Traga um Amigo!', content: 'Traga um amigo para treinar com você e, se ele se matricular em qualquer um de nossos planos, **você ganha 50% de desconto** na sua próxima mensalidade!\n\nAproveite!', type: AnnouncementType.Promotion, createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), authorId: 'user2', readByMemberIds: [] },
+    { id: 'ann3', title: 'Novos Equipamentos na Área de Musculação', content: 'Acabamos de receber novos equipamentos para a área de musculação, incluindo:\n\n*   Leg Press 45º\n*   Cadeira Extensora Nova\n*   Banco Scott\n\nVenha conferir e turbinar o seu treino!', type: AnnouncementType.Info, createdAt: new Date(new Date().setDate(new Date().getDate() - 7)), authorId: 'user2', readByMemberIds: ['mem1', 'mem2'] },
 ];
 
 const initialRoles: Role[] = [

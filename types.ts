@@ -159,6 +159,7 @@ export interface Announcement {
     type: AnnouncementType;
     createdAt: Date;
     authorId: string; // User ID
+    readByMemberIds: string[];
 }
 
 export interface Role {

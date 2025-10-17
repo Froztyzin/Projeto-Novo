@@ -44,10 +44,17 @@ const MemberHeader: React.FC<{ member: Member, onLogout: () => void, logo: strin
 );
 
 const MemberNav: React.FC<{ view: MemberView, setView: (view: MemberView) => void }> = ({ view, setView }) => {
+    const { announcements, currentMember } = useAppContext();
+
+    const unreadCount = useMemo(() => {
+        if (!currentMember) return 0;
+        return announcements.filter(a => !a.readByMemberIds.includes(currentMember.id)).length;
+    }, [announcements, currentMember]);
+
     const navItems = [
         { id: 'plan', label: 'Meu Plano', icon: <PackageIcon className="h-5 w-5 mr-2" /> },
         { id: 'payments', label: 'Pagamentos', icon: <CreditCardIcon className="h-5 w-5 mr-2" /> },
-        { id: 'announcements', label: 'Avisos', icon: <BellIcon className="h-5 w-5 mr-2" /> },
+        { id: 'announcements', label: 'Avisos', icon: <BellIcon className="h-5 w-5 mr-2" />, notificationCount: unreadCount },
         { id: 'profile', label: 'Meu Perfil', icon: <UserCircleIcon className="h-5 w-5 mr-2" /> },
     ];
     return (
@@ -56,13 +63,19 @@ const MemberNav: React.FC<{ view: MemberView, setView: (view: MemberView) => voi
                 <button
                     key={item.id}
                     onClick={() => setView(item.id as MemberView)}
-                    className={`flex items-center px-3 py-2 sm:px-4 sm:py-2.5 text-sm font-semibold rounded-md transition-colors w-full justify-center ${
+                    className={`relative flex items-center px-3 py-2 sm:px-4 sm:py-2.5 text-sm font-semibold rounded-md transition-colors w-full justify-center ${
                         view === item.id
                             ? 'bg-slate-800 text-purple-400 shadow'
                             : 'text-slate-300 hover:bg-slate-800/50'
                     }`}
                 >
-                    {item.icon} {item.label}
+                    {item.icon}
+                    <span>{item.label}</span>
+                    {item.notificationCount && item.notificationCount > 0 ? (
+                        <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white ring-2 ring-slate-900">
+                            {item.notificationCount > 9 ? '9+' : item.notificationCount}
+                        </span>
+                    ) : null}
                 </button>
             ))}
         </nav>
@@ -236,34 +249,63 @@ const MemberProfile: React.FC<{ member: Member }> = ({ member }) => {
 };
 
 const MemberAnnouncements: React.FC = () => {
-    const { announcements } = useAppContext();
+    const { announcements, currentMember, markAnnouncementAsRead, markAllAnnouncementsAsRead } = useAppContext();
 
     const sortedAnnouncements = useMemo(() => {
         return [...announcements].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [announcements]);
 
+    const unreadCount = useMemo(() => {
+        if (!currentMember) return 0;
+        return announcements.filter(a => !a.readByMemberIds.includes(currentMember.id)).length;
+    }, [announcements, currentMember]);
+
+    if (!currentMember) return null;
+
     return (
         <Card className="animate-fadeIn">
             <CardHeader>
-                <CardTitle>Mural de Avisos</CardTitle>
-                <CardDescription>Fique por dentro das últimas novidades da academia.</CardDescription>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Mural de Avisos</CardTitle>
+                        <CardDescription>Fique por dentro das últimas novidades da academia.</CardDescription>
+                    </div>
+                    {unreadCount > 0 && (
+                        <Button variant="outline" size="sm" onClick={markAllAnnouncementsAsRead}>
+                            Marcar todos como lidos
+                        </Button>
+                    )}
+                </div>
             </CardHeader>
             <CardContent>
                 {sortedAnnouncements.length > 0 ? (
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        {sortedAnnouncements.map(ann => (
-                            <div key={ann.id} className="p-4 bg-slate-800/70 rounded-lg">
-                                <div className="flex justify-between items-baseline">
-                                    <h4 className="font-bold text-lg text-slate-100">{ann.title}</h4>
-                                    <p className="text-xs text-slate-400">{new Date(ann.createdAt).toLocaleDateString('pt-BR')}</p>
+                        {sortedAnnouncements.map(ann => {
+                            const isRead = ann.readByMemberIds.includes(currentMember.id);
+                            return (
+                                <div key={ann.id} className={`p-4 bg-slate-800/70 rounded-lg transition-opacity ${isRead ? 'opacity-60' : ''}`}>
+                                    <div className="flex justify-between items-baseline">
+                                        <h4 className="font-bold text-lg text-slate-100 flex items-center">
+                                            {!isRead && <span className="h-2 w-2 bg-purple-400 rounded-full mr-3 flex-shrink-0"></span>}
+                                            {ann.title}
+                                        </h4>
+                                        <p className="text-xs text-slate-400 ml-2 text-right">{new Date(ann.createdAt).toLocaleDateString('pt-BR')}</p>
+                                    </div>
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-purple-400 mt-1">{ann.type}</p>
+                                    <div 
+                                        className="mt-3 text-slate-300 ai-content"
+                                        dangerouslySetInnerHTML={{ __html: markdownToHtml(ann.content) }}
+                                    ></div>
+                                    {!isRead && (
+                                        <div className="text-right mt-3">
+                                            <Button size="sm" variant="ghost" onClick={() => markAnnouncementAsRead(ann.id)}>
+                                                Marcar como lido
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-purple-400 mt-1">{ann.type}</p>
-                                <div 
-                                    className="mt-3 text-slate-300 ai-content"
-                                    dangerouslySetInnerHTML={{ __html: markdownToHtml(ann.content) }}
-                                ></div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <p className="text-center text-slate-400 py-8">Nenhum aviso publicado no momento.</p>
@@ -274,8 +316,8 @@ const MemberAnnouncements: React.FC = () => {
 };
 
 export const MemberPortal: React.FC = () => {
-    const [view, setView] = useState<MemberView>('plan');
-    const { currentMember, logout, plans, payments, updatePayment, announcements } = useAppContext();
+    const [view, setView] = useState<MemberView>('announcements');
+    const { currentMember, logout, plans, payments, updatePayment } = useAppContext();
     const { logo } = useSettings();
 
     if (!currentMember) {

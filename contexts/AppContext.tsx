@@ -44,9 +44,11 @@ interface AppContextType {
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateExpense: (updatedExpense: Expense) => void;
   deleteExpense: (expenseId: string) => void;
-  addAnnouncement: (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'>) => void;
+  addAnnouncement: (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'|'readByMemberIds'>) => void;
   updateAnnouncement: (updatedAnnouncement: Announcement) => void;
   deleteAnnouncement: (announcementId: string) => void;
+  markAnnouncementAsRead: (announcementId: string) => void;
+  markAllAnnouncementsAsRead: () => void;
   importData: (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => void;
   runAutomatedBillingCycle: () => void;
   getAIResponse: (prompt: string) => Promise<string>;
@@ -374,13 +376,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
-    const addAnnouncement = (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'>) => {
+    const addAnnouncement = (announcement: Omit<Announcement, 'id'|'createdAt'|'authorId'|'readByMemberIds'>) => {
         if (!currentUser) return;
         const newAnnouncement: Announcement = { 
             ...announcement, 
             id: `ann${Date.now()}`,
             createdAt: new Date(),
-            authorId: currentUser.id
+            authorId: currentUser.id,
+            readByMemberIds: [],
         };
         setAnnouncements(prev => [newAnnouncement, ...prev]);
         addToast('Comunicado publicado com sucesso!', 'success');
@@ -400,6 +403,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (toDelete) {
             addAuditLog(LogActionType.DELETE_ANNOUNCEMENT, `Excluiu o comunicado: "${toDelete.title}".`);
         }
+    };
+
+    const markAnnouncementAsRead = (announcementId: string) => {
+        if (!currentMember) return;
+        setAnnouncements(prev => prev.map(ann => {
+            if (ann.id === announcementId && !ann.readByMemberIds.includes(currentMember.id)) {
+                return { ...ann, readByMemberIds: [...ann.readByMemberIds, currentMember.id] };
+            }
+            return ann;
+        }));
+    };
+
+    const markAllAnnouncementsAsRead = () => {
+        if (!currentMember) return;
+        setAnnouncements(prev => prev.map(ann => {
+            if (!ann.readByMemberIds.includes(currentMember.id)) {
+                return { ...ann, readByMemberIds: [...ann.readByMemberIds, currentMember.id] };
+            }
+            return ann;
+        }));
     };
 
     const importData = (data: { members: Member[], plans: Plan[], payments: Payment[], expenses: Expense[] }) => {
@@ -645,6 +668,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const value = {
         isLoading, members, plans, payments, expenses, auditLogs,
         announcements, addAnnouncement, updateAnnouncement, deleteAnnouncement,
+        markAnnouncementAsRead, markAllAnnouncementsAsRead,
         isAuthenticated, currentUser, isAuthenticatedMember, currentMember,
         roles, users, hasPermission,
         login, logout, loginMember, updateCurrentMemberProfile,
