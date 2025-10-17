@@ -285,10 +285,10 @@ export const Dashboard: React.FC = () => {
     }, [period, filteredData, chartData, isLoading, getDashboardInsights]);
 
     const statCards = useMemo(() => ([
-        { title: "Receita no Período", value: filteredData.revenueInPeriod.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: <DollarSignIcon className="h-6 w-6 text-primary-700 dark:text-primary-300" />, colorClass: "bg-primary-100 dark:bg-primary-500/10" },
-        { title: "Novos Alunos", value: filteredData.newMembersCount, icon: <UsersRoundIcon className="h-6 w-6 text-blue-700 dark:text-blue-300" />, colorClass: "bg-blue-100 dark:bg-blue-500/10" },
-        { title: "Despesas no Período", value: filteredData.expensesInPeriod.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: <ReceiptIcon className="h-6 w-6 text-orange-700 dark:text-orange-300" />, colorClass: "bg-orange-100 dark:bg-orange-500/10" },
-        { title: "Pagamentos Vencidos", value: filteredData.overdueInPeriod, icon: <AlertTriangleIcon className="h-6 w-6 text-red-700 dark:text-red-300" />, colorClass: "bg-red-100 dark:bg-red-500/10" },
+        { title: "Receita no Período", value: filteredData.revenueInPeriod.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: <DollarSignIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary-700 dark:text-primary-300" />, colorClass: "bg-primary-100 dark:bg-primary-500/10" },
+        { title: "Novos Alunos", value: filteredData.newMembersCount, icon: <UsersRoundIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-700 dark:text-blue-300" />, colorClass: "bg-blue-100 dark:bg-blue-500/10" },
+        { title: "Despesas no Período", value: filteredData.expensesInPeriod.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: <ReceiptIcon className="h-5 w-5 sm:h-6 sm:w-6 text-orange-700 dark:text-orange-300" />, colorClass: "bg-orange-100 dark:bg-orange-500/10" },
+        { title: "Pagamentos Vencidos", value: filteredData.overdueInPeriod, icon: <AlertTriangleIcon className="h-5 w-5 sm:h-6 sm:w-6 text-red-700 dark:text-red-300" />, colorClass: "bg-red-100 dark:bg-red-500/10" },
     ]), [filteredData]);
 
     if (isLoading) {
@@ -296,11 +296,11 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             <PeriodFilter selected={period} onSelect={setPeriod} />
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {statCards.map((card, index) => (
                     <div key={card.title} className="animate-stagger" style={{ animationDelay: `${index * 100}ms` }}>
                         <StatCard {...card} />
@@ -309,11 +309,11 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 {/* Revenue Chart */}
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '200ms' }}>
+                <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '200ms' }}>
                     <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Receitas vs. Despesas (Últimos 12 meses)</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={280}>
                         {chartData.financialChart.length > 0 ? (
                             <BarChart data={chartData.financialChart}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
@@ -333,9 +333,9 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Member Growth Chart */}
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '300ms' }}>
+                <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '300ms' }}>
                     <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Evolução de Alunos (Últimos 12 meses)</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                    <ResponsiveContainer width="100%" height={280}>
                         {chartData.memberGrowthChart.length > 0 ? (
                            <LineChart data={chartData.memberGrowthChart}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128, 128, 128, 0.2)" />
@@ -360,20 +360,20 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Recent Payments */}
-            <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '500ms' }}>
+            <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '500ms' }}>
                 <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Pagamentos no Período</h3>
                 <ul className="space-y-4">
                     {filteredData.recentPayments.length > 0 ? filteredData.recentPayments.map(payment => {
                         const member = members.find(m => m.id === payment.memberId);
                         return (
-                            <li key={payment.id} className="flex items-center justify-between">
+                            <li key={payment.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
                                 <div>
                                     <p className="font-semibold text-gray-800 dark:text-gray-100">{member?.name || 'Aluno Desconhecido'}</p>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {new Date(payment.date).toLocaleDateString('pt-BR')}
                                     </p>
                                 </div>
-                                <div className="text-right">
+                                <div className="flex flex-col items-end">
                                     <p className="font-semibold text-primary-600 dark:text-primary-400">{payment.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                                     <PaymentStatusBadge status={payment.status} />
                                 </div>
@@ -384,8 +384,8 @@ export const Dashboard: React.FC = () => {
             </div>
             
              {/* Immediate Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '600ms' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+                <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '600ms' }}>
                     <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Ações Pendentes (Vencidos)</h3>
                      <ul className="space-y-3">
                         {immediateActions.overdue.length > 0 ? immediateActions.overdue.map(payment => {
@@ -404,7 +404,7 @@ export const Dashboard: React.FC = () => {
                         }) : <p className="text-center text-gray-500 dark:text-gray-400 py-4">Nenhum pagamento vencido.</p>}
                     </ul>
                 </div>
-                 <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '700ms' }}>
+                 <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-xl shadow-md animate-stagger" style={{ animationDelay: '700ms' }}>
                     <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200">Planos Expirando (Próx. 7 dias)</h3>
                      <ul className="space-y-3">
                         {immediateActions.expiring.length > 0 ? immediateActions.expiring.map(({ member, expiryDate }) => {
