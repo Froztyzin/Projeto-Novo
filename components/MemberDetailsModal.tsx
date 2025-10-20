@@ -38,7 +38,6 @@ const ChurnRiskBadge: React.FC<{ risk: 'Alto' | 'Médio' | 'Baixo' }> = ({ risk 
     return <span className={`px-2.5 py-1 text-sm font-semibold rounded-full inline-block ${riskClasses[risk]}`}>{risk}</span>;
 }
 
-// FIX: Completed the component definition to resolve syntax error and export issue.
 export const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({ isOpen, onClose, member, plan, payments, plans }) => {
     const { getMemberInsights } = useAppContext();
     const [insight, setInsight] = useState<MemberInsight | null>(null);

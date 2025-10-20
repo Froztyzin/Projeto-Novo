@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Member, Plan, ViewType, User } from '../types';
 import { Permission } from '../types';
-// FIX: Replaced `useData` and `useAuth` with `useAppContext` as they do not exist.
 import { useAppContext } from '../contexts/AppContext';
 import { 
     SearchIcon, 
@@ -70,6 +69,7 @@ const navItems = [
     { to: '/reports', label: 'Ir para Relatórios', permissions: [Permission.VIEW_REPORTS] },
     { to: '/calendar', label: 'Ir para Calendário', permissions: [Permission.VIEW_CALENDAR] },
     { to: '/settings', label: 'Ir para Configurações', permissions: [Permission.MANAGE_SETTINGS, Permission.MANAGE_ROLES] },
+    // Fix: Corrected typo from VIEW_AUD_LOG to VIEW_AUDIT_LOG
     { to: '/audit-log', label: 'Ir para Registro de Atividades', permissions: [Permission.VIEW_AUDIT_LOG] },
 ];
 

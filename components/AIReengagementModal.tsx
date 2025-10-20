@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { Member, Plan } from '../types';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
-// FIX: Replaced `useData` with `useAppContext` as DataContext does not exist.
 import { useAppContext } from '../contexts/AppContext';
 import { useToast } from '../contexts/ToastContext';
 import { Skeleton } from './ui/Skeleton';

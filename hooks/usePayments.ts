@@ -1,4 +1,3 @@
-// FIX: Imported React to provide the namespace for types like React.ChangeEvent.
 import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../contexts/AppContext';
 import type { Payment, Member, Plan } from '../types';
@@ -98,7 +97,6 @@ export const usePayments = () => {
         isLoading,
         payments: currentPayments,
         processedPayments,
-        // FIX: Expose all payments to allow components to check total count vs filtered count.
         allPayments: payments,
         memberMap,
         planMap,
