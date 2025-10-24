@@ -1,6 +1,5 @@
 import React from 'react';
-import { NavLink as RouterNavLink, useLocation } from 'react-router-dom';
-import type { ViewType } from '../types';
+import { NavLink as RouterNavLink } from 'react-router-dom';
 import { Permission } from '../types';
 import { DashboardIcon, UsersIcon, CreditCardIcon, CalendarIcon } from './ui/Icons';
 import { useAppContext } from '../contexts/AppContext';
@@ -13,7 +12,7 @@ const NavItem: React.FC<{
   <RouterNavLink
     to={to}
     className={({ isActive }) =>
-      `flex flex-col items-center justify-center h-full text-xs transition-colors duration-200 focus:outline-none ${
+      `flex flex-col items-center justify-center gap-1 h-full text-center transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-primary-500 rounded-md ${
         isActive
           ? 'text-primary-400'
           : 'text-slate-400 hover:text-primary-300'
@@ -21,7 +20,7 @@ const NavItem: React.FC<{
     }
   >
     {icon}
-    <span className="mt-1 font-semibold">{label}</span>
+    <span className="text-xs font-medium">{label}</span>
   </RouterNavLink>
 );
 

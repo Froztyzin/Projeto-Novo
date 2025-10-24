@@ -13,6 +13,7 @@ import { Card, CardContent } from './ui/Card';
 import { Pagination } from './ui/Pagination';
 import { Avatar } from './ui/Avatar';
 import { AIReminderModal } from './AIReminderModal';
+import { useToast } from '../contexts/ToastContext';
 
 const PaymentsListSkeleton: React.FC = () => (
     <div className="space-y-6">
@@ -64,6 +65,7 @@ type SortableKeys = keyof Payment | 'memberName' | 'planName';
 
 export const PaymentsList: React.FC = () => {
   const { members, plans, addPayment, updatePayment, deletePayment, hasPermission, runAutomatedBillingCycle } = useAppContext();
+  const { addToast } = useToast();
   
   const {
     isLoading,
@@ -87,6 +89,60 @@ export const PaymentsList: React.FC = () => {
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
   const [reminderModalData, setReminderModalData] = useState<{ payment: Payment, member: Member } | null>(null);
   const [isBillingLoading, setIsBillingLoading] = useState(false);
+  const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set());
+
+  const areAllSelected = useMemo(() => 
+    currentPayments.length > 0 && currentPayments.every(p => selectedPayments.has(p.id)),
+    [currentPayments, selectedPayments]
+  );
+
+  const handleSelect = (paymentId: string, checked: boolean) => {
+    setSelectedPayments(prev => {
+        const newSet = new Set(prev);
+        if (checked) {
+            newSet.add(paymentId);
+        } else {
+            newSet.delete(paymentId);
+        }
+        return newSet;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+      if (checked) {
+          const allCurrentIds = new Set(currentPayments.map(p => p.id));
+          setSelectedPayments(prev => new Set([...prev, ...allCurrentIds]));
+      } else {
+          const allCurrentIds = new Set(currentPayments.map(p => p.id));
+          setSelectedPayments(prev => new Set([...prev].filter(id => !allCurrentIds.has(id))));
+      }
+  };
+
+  const handleBulkMarkAsPaid = () => {
+      const paymentsToUpdate = Array.from(selectedPayments).map(id => 
+          processedPayments.find(p => p.id === id)
+      ).filter(Boolean) as Payment[];
+
+      let updatedCount = 0;
+      paymentsToUpdate.forEach(payment => {
+          if (payment.status !== PaymentStatus.Paid) {
+              updatePayment({
+                  ...payment,
+                  status: PaymentStatus.Paid,
+                  paidDate: new Date(),
+              });
+              updatedCount++;
+          }
+      });
+      
+      if (updatedCount > 0) {
+        addToast(`${updatedCount} pagamento(s) marcado(s) como 'Pago'.`, 'success');
+      } else {
+        addToast('Nenhum pagamento precisou de atualização.', 'info');
+      }
+      setSelectedPayments(new Set());
+  };
+
 
   const statCards = useMemo(() => ([
     { title: "Recebido", value: kpiData.paid.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), count: kpiData.paid.count, icon: <CheckCircleIcon className="w-6 h-6"/> },
@@ -166,6 +222,16 @@ export const PaymentsList: React.FC = () => {
             </div>
         </CardContent>
       </Card>
+      
+      {selectedPayments.size > 0 && (
+          <div className="bg-slate-700 p-3 rounded-lg flex items-center justify-between animate-fadeIn sticky top-2 z-20">
+              <span className="text-white font-medium">{selectedPayments.size} selecionado(s)</span>
+              <Button onClick={handleBulkMarkAsPaid} size="sm">
+                  <CheckCircleIcon className="w-5 h-5 mr-2" />
+                  Marcar como Pago
+              </Button>
+          </div>
+      )}
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md">
         {/* Table View */}
@@ -173,6 +239,14 @@ export const PaymentsList: React.FC = () => {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700/50">
+                  <th className="p-4 w-4">
+                      <input 
+                          type="checkbox"
+                          checked={areAllSelected}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-800"
+                      />
+                  </th>
                   {renderSortableHeader('Aluno', 'memberName')}
                   {renderSortableHeader('Plano', 'planName')}
                   {renderSortableHeader('Valor', 'amount')}
@@ -186,9 +260,18 @@ export const PaymentsList: React.FC = () => {
                 {currentPayments.length > 0 ? currentPayments.map((p, index) => (
                   <tr 
                     key={p.id} 
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50 animate-stagger" 
+                    className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 animate-stagger ${selectedPayments.has(p.id) ? 'bg-primary-500/10' : ''}`}
                     style={{ animationDelay: `${index * 30}ms` }}
                   >
+                    <td className="p-4">
+                        <input 
+                            type="checkbox" 
+                            checked={selectedPayments.has(p.id)}
+                            onChange={(e) => handleSelect(p.id, e.target.checked)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-800"
+                        />
+                    </td>
                     <td className="p-4">
                         <div className="flex items-center">
                             <Avatar name={memberMap[p.memberId]?.name} />
@@ -217,7 +300,7 @@ export const PaymentsList: React.FC = () => {
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={7} className="text-center p-8 text-gray-500 dark:text-gray-400">
+                    <td colSpan={8} className="text-center p-8 text-gray-500 dark:text-gray-400">
                       {allPayments.length === 0 ? 'Nenhum pagamento registrado ainda.' : 'Nenhum pagamento encontrado com os filtros aplicados.'}
                     </td>
                   </tr>
@@ -232,9 +315,15 @@ export const PaymentsList: React.FC = () => {
                 currentPayments.map((p, index) => (
                     <div 
                         key={p.id} 
-                        className="bg-slate-50 dark:bg-gray-900/40 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 animate-stagger"
+                        className={`relative bg-slate-50 dark:bg-gray-900/40 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 animate-stagger ${selectedPayments.has(p.id) ? 'border-primary-500 ring-2 ring-primary-500' : ''}`}
                         style={{ animationDelay: `${index * 70}ms` }}
                     >
+                        <input
+                            type="checkbox"
+                            checked={selectedPayments.has(p.id)}
+                            onChange={(e) => handleSelect(p.id, e.target.checked)}
+                            className="absolute top-4 right-4 h-5 w-5 rounded text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:focus:ring-offset-gray-800 z-10"
+                        />
                         <div className="flex justify-between items-start mb-3">
                             <div className="flex items-center">
                                 <Avatar name={memberMap[p.memberId]?.name} />
